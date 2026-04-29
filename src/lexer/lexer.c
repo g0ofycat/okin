@@ -64,7 +64,7 @@ static void push(lexer_t *l, token_type_t type, const char *start, size_t len, i
 		l->capacity *= 2;
 		l->tokens = realloc(l->tokens, l->capacity * sizeof(token_t));
 	}
-	l->tokens[l->count++] = (token_t){ type, start, len, line, col };
+	l->tokens[l->count++] = (token_t){ start, len, line, col, type };
 }
 
 /// @brief Emit an error token and print to stderr
@@ -103,13 +103,10 @@ static int is_value_char(int c) { return c && !strchr("<>|,; \t\r\n", c); }
 /// @return Heap allocated lexer_t
 lexer_t *lexer_init(const char *src)
 {
-	lexer_t *l  = malloc(sizeof(lexer_t));
+	lexer_t *l  = calloc(1, sizeof(lexer_t));
 	l->src      = src;
-	l->pos      = 0;
 	l->line     = 1;
 	l->col      = 1;
-	l->count    = 0;
-	l->depth    = 0;
 	l->capacity = LEXER_INIT_CAP;
 	l->tokens   = malloc(LEXER_INIT_CAP * sizeof(token_t));
 	return l;

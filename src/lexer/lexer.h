@@ -33,11 +33,11 @@ typedef enum
 
 typedef struct
 {
-	token_type_t type;
 	const char  *start;
 	size_t       len;
 	int          line;
 	int          col;
+	token_type_t type;
 } token_t;
 
 // ======================
@@ -57,7 +57,7 @@ typedef struct
 } lexer_t;
 
 // ======================
-// -- PUBLIC API
+// -- PUBLIC
 // ======================
 
 /// @brief Initialize lexer with source string

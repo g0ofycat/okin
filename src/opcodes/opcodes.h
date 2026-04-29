@@ -117,14 +117,4 @@
 					   //   ~FLOOR<A, DEST>               - floor
 					   //   ~CEIL<A, DEST>                - ceiling
 
-//--============
-// -- STRUCTS
-//--============
-
-typedef struct {
-	uint8_t  opcode;
-	char**   args;
-	int      argc;
-} src_node;
-
 #endif

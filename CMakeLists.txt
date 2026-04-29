@@ -7,6 +7,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(okin
 	src/lexer/lexer.c
+	src/parser/parser.c
+	src/parser/util/arena.c
+
 	testing/lexer.c
 )
 
@@ -14,5 +17,6 @@ target_include_directories(okin PRIVATE
 	src/opcodes
 	src/lexer
 	src/parser
+	src/parser/util
 	src/interpreter
 )
