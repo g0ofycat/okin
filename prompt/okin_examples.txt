@@ -1,0 +1,60 @@
+OKIN: Examples (3/3)
+
+1. Schema
+Okin programming follows this schema: "<opcode><argv>;".
+<opcode>: Integer value representing the opcode
+<argv>: Arguments that the opcode takes in, argv can hold multiple arguments
+
+2. Usage
+
+2.1: Printing values
+To print a value or variable, use IO (~WRITE or ~WRITELN):
+  192~WRITELN<Hello, World>      -- print string literal
+  2<X, 10>;192~WRITELN<X>       -- print variable
+
+2.2: Initializing variables
+Use opcode 2 (VAR) to declare and assign a variable:
+  2<X, 10>        -- X = 10
+  2<NAME, Alice>  -- NAME = "Alice"
+  2<FLAG, 0>      -- FLAG = false
+
+2.3: Reassigning variables
+Use opcode 3 (SET) to update an existing variable:
+  2<X, 10>;3<X, 20>   -- X starts at 10, then becomes 20
+
+2.4: Arithmetic
+ADD (64), SUB (65), MUL (66), DIV (67), MOD (68) all follow <A, B, DEST>:
+  2<X, 10>;2<Y, 5>;64<X, Y, Z>   -- Z = X + Y (15)
+  2<X, 10>;2<Y, 3>;68<X, Y, R>   -- R = X % Y (1)
+
+2.5: Conditionals
+Use opcode 112 (IF) with a comparison opcode as the condition:
+  2<X, 10>;112<80<X, 10>|192~WRITELN<X is 10>>       -- if X == 10
+  2<X, 15>;112<82<X, 10>|192~WRITELN<X is greater>>  -- if X > 10
+  2<X, 5>;112<83<X, 10>|192~WRITELN<X is less>>      -- if X < 10
+
+2.6: Loops
+FOR (32) takes <START, END, STEP> with a logic block:
+  2<I, 0>;32<0, 5, 1|192~WRITELN<I>>   -- print I from 0 to 4
+
+WHILE (33) takes a condition and a logic block:
+  2<X, 0>;33<83<X, 10>|192~WRITELN<X>;64<X, 1, X>>  -- while X < 10, print and increment
+
+2.7: Functions
+Define with opcode 16 (FUNCTION), invoke with opcode 17 (CALL), return with opcode 18 (RET):
+  16<GREET|192~WRITELN<Hello>>;17<GREET>                        -- define and call, no return
+  16<ADD_ONE, N|64<N, 1, R>;18<R>>;17<ADD_ONE, 5, RESULT>      -- return N + 1, store in RESULT
+
+2.8: Global variables
+Use opcode 4 (GLOBAL) inside a function to mark a var as writable from inner scope:
+  2<X, 0>;16<INC|4<X>;64<X, 1, X>>;17<INC>;192~WRITELN<X>     -- X is 1 after call
+
+2.9: Arrays
+Use opcode 48 (ARRAY) to init, 49 (IN) for membership, 50 (AGET) and 51 (ASET) for index access:
+  2<ARR, 48<1, 2, 3, 4, 5>>       -- ARR = [1, 2, 3, 4, 5]
+  49<2, ARR>                       -- check if 2 is in ARR
+  50<ARR, 0, FIRST>                -- FIRST = ARR[0]  (1)
+  51<ARR, 0, 99>                   -- ARR[0] = 99
+
+2.10: Full example — sum 1 to 10
+  2<SUM, 0>;32<1, 11, 1|64<SUM, I, SUM>>;192~WRITELN<SUM>

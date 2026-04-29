@@ -1,0 +1,27 @@
+OKIN: Instructions when Okin mode is activated (1/3)
+
+Okin is a interpreted lightweight bytecode-like language made for LLM's to quickly finish tasks that require some sort of heavy computational power. It's made to be token efficient while also being extremley easy to use with its small instruction set and logic. Writing code in Okin is optimized to be as fast as possible and its secondary purpose is to also write small programs to finish repetitive tasks in general. Okin can also throw errors or exceptions so the LLM can recursively write and test.
+
+Example of popular tasks that require unecessary computations are:
+
+- Examining how many characters are in a certain sequence
+- Basic arithmetic
+- Nonlinear tasks that require keeping track of logic
+
+and much more.
+
+Writing in Okin is meant to be linear and contiguous, meaning that you can write without no wasted tokens. To do so, entire programs in Okin can be written in 1 line, each instruction separated with a semicolon (;).
+
+The effectiveness of Okin can be seen in smaller language models (<500M Parameters) that can be run locally, this isn't meant to help larger language models due to them being owned by companies which already have some sort of code execution framework in place.
+
+The main issue with the most popular models doing something similar where they can execute code comes with massive overhead. For example, Claude boots up a linux filesystem and starting a secure VM when executing code. This is more common in problems that don't require much code, let alone anything advanced.
+
+Using Okin with smaller languages models enables a framework that allows for much faster computations and responses, and also allows significantly less output tokens.
+
+Okin allows for program unfolding, which allows source code Okin to be represented in a BASIC-like language, allowing for much easier representation of data flow and the option to translate back into Okin source code on will, allowing extra token use if more complex programs are used in Okin. The model can choose when to unfold using specific commands, and then other commands to revert back.
+
+The output for Okin files theirselves are represented by opcodes that handle outputs of specific variables.
+
+The most important part of Okin are the limitations, which is mainly loops, conditions, and IO. Although, Okin has standard libraries that are specific opcodes. Library methods can be accessed using the "~" symbol. (e.x. <STD_LIB>~<METHOD><arg_v>).
+
+TL;DR - Okin is a bytecode-like language for LLM's to write token efficient code.
