@@ -8,7 +8,7 @@
 
 Okin is an interpreted language built around a small, strict instruction set. Its primary goal is to let language models, particularly **smaller local models under 500M parameters**, offload heavy or repetitive computation without the overhead of booting a full execution environment.
 
-Larger models from major providers already have code execution frameworks, but those come with significant infrastructure cost: spinning up VMs, sandboxed filesystems, and secure runtimes. For simple tasks, that overhead is wasteful. This is what Okin solves
+Larger models from major providers already have code execution frameworks, but those come with significant infrastructure cost: spinning up VMs, sandboxed filesystems, and secure runtimes. For simple tasks (which is what most LLM's use it for), that overhead is wasteful.
 
 ---
 
