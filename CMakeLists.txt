@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(okin
-
+	src/lexer/lexer.c
+	testing/lexer.c
 )
 
 target_include_directories(okin PRIVATE
