@@ -10,7 +10,7 @@ add_executable(okin
 	src/parser/parser.c
 	src/parser/util/arena.c
 
-	testing/lexer.c
+	testing/core.c
 )
 
 target_include_directories(okin PRIVATE
