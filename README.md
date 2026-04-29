@@ -31,8 +31,8 @@ Every instruction follows this schema:
 <opcode><argv>;
 ```
 
-- `<opcode>` — an integer representing the operation
-- `<argv>` — comma-separated arguments wrapped in `< >`
+- `<opcode>` - an integer representing the operation
+- `<argv>` - comma-separated arguments wrapped in `< >`
 - Instructions are separated by `;` and can be written on a **single line**
 
 ### Nested blocks use `|` as a delimiter
@@ -61,7 +61,7 @@ Okin is designed to be written without line breaks. A complete program:
 ```
 
 ### Program unfolding
-Okin source can be **unfolded** into a BASIC-like representation for easier reading and data flow analysis, then **refolded** back into compact Okin on demand. Models choose when to unfold using specific opcodes — useful when programs grow complex enough to require explicit tracing.
+Okin source can be **unfolded** into a BASIC-like representation for easier reading and data flow analysis, then **refolded** back into compact Okin on demand. Models choose when to unfold using specific opcodes, useful when programs grow complex enough to require explicit tracing.
 
 ### Soft typing
 Variables are dynamically typed. Type is inferred on assignment and can change on reassignment via `SET`. Type mismatches at runtime **throw an error**.
@@ -83,4 +83,4 @@ Errors halt execution and surface a message, allowing the model to rewrite and r
 
 ---
 
-> **TL;DR** — Okin is a bytecode-like language for LLMs to write token-efficient, executable programs with a minimal and predictable instruction set.
+> **TL;DR** - Okin is a bytecode-like language for LLMs to write token-efficient, executable programs with a minimal and predictable instruction set.
