@@ -23,6 +23,8 @@ typedef enum
 	TK_COMMA,     // ,
 	TK_SEMI,      // ;
 	TK_VALUE,     // identifier or raw literal
+	TK_STRING,    // string lit
+	TK_INT,       // int lit
 	TK_EOF,
 	TK_ERROR
 } token_type_t;

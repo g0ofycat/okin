@@ -13,6 +13,13 @@
 // ======================
 
 #define PARSER_MAX_LABELS 256
+#define PARSER_MAX_ARGS   256
+
+#define BODY_MAX_BYTES    4096
+#define PARSER_MAX_NODES  4096
+
+#define NODE_LEAF         0xFF
+#define NODE_JUMP_TARGET  0xFE
 
 // ======================
 // -- STRUCTS
@@ -21,7 +28,9 @@
 typedef struct okin_node_t
 {
 	const char         *val_start;
+	const char         *method;
 	size_t              val_len;
+	size_t              method_len;
 	struct okin_node_t **args;
 	struct okin_node_t **body;
 	int                 argc;

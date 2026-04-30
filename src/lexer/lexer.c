@@ -28,9 +28,13 @@ static const char *TOKEN_TYPE_NAMES[] = {
 	"COMMA",
 	"SEMI",
 	"VALUE",
+	"STRING",
+	"INT",
 	"EOF",
 	"ERROR"
 };
+
+static const char STR_DELIM[] = "\"'";
 
 // ======================
 // -- PRIVATE
@@ -89,10 +93,33 @@ static size_t read_while(lexer_t *l, int (*pred)(int))
 	return len;
 }
 
+/// @brief Read a quoted string, return span inside quotes
+/// @param l
+/// @param delim Opening delimiter character (' or ")
+static void read_string(lexer_t *l, char delim)
+{
+	const char *str_start = l->src + l->pos;
+	int line = l->line, col = l->col;
+
+	while (peek(l) && peek(l) != delim) {
+		if (peek(l) == '\\' && l->src[l->pos + 1]) advance(l);
+		advance(l);
+	}
+
+	size_t str_len = (l->src + l->pos) - str_start;
+
+	if (peek(l) == delim)
+		advance(l);
+	else
+		fprintf(stderr, "[okin lex error] line %d col %d: unclosed string\n", line, col);
+
+	push(l, TK_STRING, str_start, str_len, line, col);
+}
+
 /// @brief Return 1 if c is a valid value character (not a delimiter)
 /// @param c
 /// @return int
-static int is_value_char(int c) { return c && !strchr("<>|,; \t\r\n", c); }
+static int is_value_char(int c) { return c && !strchr("<>|,; \t\r\n\"'", c); }
 
 // ======================
 // -- LEXER
@@ -173,8 +200,16 @@ void lexer_run(lexer_t *l)
 			}
 			else
 			{
-				push(l, TK_OPCODE, start, (l->src + l->pos) - start, line, col);
+				token_type_t type = (l->depth > 0 && peek(l) != '<') ? TK_INT : TK_OPCODE;
+				push(l, type, start, (l->src + l->pos) - start, line, col);
 			}
+			continue;
+		}
+
+		if (strchr(STR_DELIM, c))
+		{
+			advance(l);
+			read_string(l, c);
 			continue;
 		}
 
