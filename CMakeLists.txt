@@ -9,6 +9,7 @@ add_executable(okin
 	src/lexer/lexer.c
 	src/parser/parser.c
 	src/parser/util/arena.c
+	src/interpreter/interpreter.cpp
 
 	testing/core.c
 )

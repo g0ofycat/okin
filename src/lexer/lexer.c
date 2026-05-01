@@ -6,7 +6,7 @@
 #include "lexer.h"
 
 // ======================
-// -- DATA TABLES
+// -- DATA
 // ======================
 
 static const char SINGLE_CHAR_TOKENS[] = "<>|,;";
