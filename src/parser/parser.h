@@ -36,6 +36,7 @@ typedef struct okin_node_t
 	int                 argc;
 	int                 body_len;
 	uint8_t             opcode;
+	token_type_t        tok;
 } okin_node_t;
 
 typedef struct

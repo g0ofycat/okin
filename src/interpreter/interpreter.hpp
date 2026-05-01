@@ -2,12 +2,19 @@
 #define INTERPRETER_HPP
 
 #include <string>
+#include <memory>
 #include <unordered_map>
 #include <cstdint>
 #include <vector>
 #include <variant>
 
 #include "../parser/parser.h"
+
+// ======================
+// -- CONSTS
+// ======================
+
+#define UNK_VAL "<UNK>"
 
 // ======================
 // -- ENUMS & CLASSES
@@ -24,7 +31,7 @@ enum class val_type_t {
 
 struct okin_val_t;
 
-using okin_array_t = std::vector<okin_val_t>;
+using okin_array_t = std::shared_ptr<std::vector<okin_val_t>>;
 
 struct okin_val_t {
 	val_type_t type;
@@ -57,7 +64,8 @@ class enviroment {
 
 		/// @brief Declare a variable (current scope)
 		/// @param name
-		void declare(const std::string &name);
+		/// @param val
+		void declare(const std::string &name, const okin_val_t &val);
 
 		/// @brief Mark variable as global
 		/// @param name
@@ -70,6 +78,8 @@ class enviroment {
 
 class interpreter {
 	private:
+		std::unordered_map<std::string, const okin_node_t *> functions;
+
 		const okin_program_t *program;
 		enviroment           *global_env;
 		int                   ip;

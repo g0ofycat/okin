@@ -299,6 +299,7 @@ static okin_node_t *parse_node(parser_t *p)
 
 		okin_node_t *n = alloc_node(p);
 		n->opcode    = NODE_LEAF;
+		n->tok       = t->type;
 		n->val_start = t->start;
 		n->val_len   = t->len;
 		return n;
@@ -319,6 +320,7 @@ static okin_node_t *parse_node(parser_t *p)
 		advance(p);
 		okin_node_t *n = alloc_node(p);
 		n->opcode    = NODE_LEAF;
+		n->tok       = t->type;
 		n->val_start = t->start;
 		n->val_len   = t->len;
 		return n;
