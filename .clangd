@@ -1,0 +1,14 @@
+CompileFlags:
+  Add: ["-Wall"]
+
+---
+If:
+  PathMatch: .*\.cpp
+CompileFlags:
+  Add: ["-std=c++17"]
+
+---
+If:
+  PathMatch: .*\.c
+CompileFlags:
+  Add: ["-std=c11"]

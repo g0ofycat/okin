@@ -60,6 +60,15 @@ static std::string tok_name(const okin_node_t *n) {
 	return std::string(n->val_start, n->val_len);
 }
 
+/// @brief ::FLOAT or int64_t to double
+/// @param v
+/// @return double
+static double to_double(const okin_val_t &v)
+{
+	if (v.type == val_type_t::FLOAT) return std::get<double>(v.data);
+	return (double)std::get<int64_t>(v.data);
+}
+
 // ======================
 // -- interpreter
 // ======================
