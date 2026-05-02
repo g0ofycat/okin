@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef PARSER_H
 #define PARSER_H
 
@@ -35,6 +39,7 @@ typedef struct okin_node_t
 	struct okin_node_t **body;
 	int                 argc;
 	int                 body_len;
+	int                 jump_index;
 	uint8_t             opcode;
 	token_type_t        tok;
 } okin_node_t;
@@ -88,4 +93,8 @@ void parser_free(parser_t *p);
 /// @param p Parser instance
 void parser_print(const parser_t *p);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

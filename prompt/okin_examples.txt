@@ -9,7 +9,7 @@ Okin programming follows this schema: "<opcode><argv>;".
 
 2.1: Printing values
 To print a value or variable, use IO (~WRITE or ~WRITELN):
-  192~WRITELN<Hello, World>      -- print string literal
+  192~WRITELN<\"Hello, World\">      -- print string literal
   2<X, 10>;192~WRITELN<X>       -- print variable
 
 2.2: Initializing variables

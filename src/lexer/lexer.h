@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef LEXER_H
 #define LEXER_H
 
@@ -79,4 +83,8 @@ void lexer_free(lexer_t *l);
 /// @param l Lexer instance
 void lexer_print(const lexer_t *l);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

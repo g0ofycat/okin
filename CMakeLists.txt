@@ -12,7 +12,7 @@ add_executable(okin
 	src/interpreter/interpreter.cpp
 	src/interpreter/interpreter_opcodes.cpp
 
-	testing/core.c
+	testing/core.cpp
 )
 
 target_include_directories(okin PRIVATE

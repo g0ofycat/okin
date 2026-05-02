@@ -1,6 +1,54 @@
 #include "interpreter.hpp"
 
 // ======================
+// -- UTILITY
+// ======================
+
+/// @brief Initalize all opcode logic lookups
+void interpreter::init_tables()
+{
+	memset(EXEC_TABLE, 0, sizeof(EXEC_TABLE));
+	memset(EVAL_TABLE, 0, sizeof(EVAL_TABLE));
+
+	EXEC_TABLE[VAR]      = &interpreter::exec_var;
+	EXEC_TABLE[SET]      = &interpreter::exec_set;
+	EXEC_TABLE[GLOBAL]   = &interpreter::exec_global;
+	EXEC_TABLE[FUNCTION] = &interpreter::exec_function;
+	EXEC_TABLE[CALL]     = &interpreter::exec_call;
+	EXEC_TABLE[RET]      = &interpreter::exec_ret;
+	EXEC_TABLE[FOR]      = &interpreter::exec_for;
+	EXEC_TABLE[WHILE]    = &interpreter::exec_while;
+	EXEC_TABLE[BREAK]    = &interpreter::exec_break;
+	EXEC_TABLE[AGET]     = &interpreter::exec_aget;
+	EXEC_TABLE[ASET]     = &interpreter::exec_aset;
+	EXEC_TABLE[ADD]      = &interpreter::exec_arith;
+	EXEC_TABLE[SUB]      = &interpreter::exec_arith;
+	EXEC_TABLE[MUL]      = &interpreter::exec_arith;
+	EXEC_TABLE[DIV]      = &interpreter::exec_arith;
+	EXEC_TABLE[MOD]      = &interpreter::exec_arith;
+	EXEC_TABLE[IF]       = &interpreter::exec_if;
+	EXEC_TABLE[JMP]      = &interpreter::exec_jmp;
+	EXEC_TABLE[JEQ]      = &interpreter::exec_jmp;
+	EXEC_TABLE[JNE]      = &interpreter::exec_jmp;
+	EXEC_TABLE[JGT]      = &interpreter::exec_jmp;
+	EXEC_TABLE[JLT]      = &interpreter::exec_jmp;
+	EXEC_TABLE[LABEL]    = &interpreter::exec_label;
+	EXEC_TABLE[IO]       = &interpreter::exec_io;
+
+	EVAL_TABLE[EQ]    = &interpreter::eval_cmp;
+	EVAL_TABLE[NEQ]   = &interpreter::eval_cmp;
+	EVAL_TABLE[GT]    = &interpreter::eval_cmp;
+	EVAL_TABLE[LT]    = &interpreter::eval_cmp;
+	EVAL_TABLE[GTE]   = &interpreter::eval_cmp;
+	EVAL_TABLE[LTE]   = &interpreter::eval_cmp;
+	EVAL_TABLE[AND]   = &interpreter::eval_logical;
+	EVAL_TABLE[OR]    = &interpreter::eval_logical;
+	EVAL_TABLE[NOT]   = &interpreter::eval_logical;
+	EVAL_TABLE[IN]    = &interpreter::eval_in;
+	EVAL_TABLE[ARRAY] = &interpreter::eval_array;
+}
+
+// ======================
 // -- enviroment
 // ======================
 
@@ -79,7 +127,10 @@ interpreter::interpreter(const parser_t *parser) :
 	program(parser->program),
 	global_env(new enviroment(nullptr)),
 	ip(0)
-{}
+{
+	static bool initialized = false;
+	if (!initialized) { init_tables(); initialized = true; }
+}
 
 /// @brief Interpreter destructor
 interpreter::~interpreter() {

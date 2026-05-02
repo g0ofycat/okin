@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <cstdint>
+#include <cstring>
 #include <cmath>
 #include <vector>
 #include <variant>
@@ -189,8 +190,11 @@ class interpreter {
 		// -- DISPATCH TABLES
 		// ======================
 
-		static const exec_fn EXEC_TABLE[TABLE_BYTE_LIMIT];
-		static const eval_fn EVAL_TABLE[TABLE_BYTE_LIMIT];
+		static exec_fn EXEC_TABLE[TABLE_BYTE_LIMIT];
+		static eval_fn EVAL_TABLE[TABLE_BYTE_LIMIT];
+
+		/// @brief Initalize all opcode logic lookups
+		static void init_tables();
 
 		// ======================
 		// -- CORE

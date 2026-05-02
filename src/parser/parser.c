@@ -193,8 +193,10 @@ static void handle_jump_opcode(parser_t *p, okin_node_t *n)
 
 	if (idx == -1)
 		parse_error(p, "undefined label");
-	else
-		label_arg->opcode = NODE_JUMP_TARGET;
+	else {
+		label_arg->opcode     = NODE_JUMP_TARGET;
+		label_arg->jump_index = idx;
+	}
 }
 
 // ======================
