@@ -98,6 +98,25 @@ static okin_node_t **alloc_node_array(parser_t *p, int count)
 // -- PRIVATE: PASS 1
 // ======================
 
+/// @brief Process a label opcode
+/// @param p
+/// @param index
+static void process_label(parser_t *p, int index)
+{
+	if (!check(p, TK_ARG_OPEN)) return;
+
+	advance(p);
+	const token_t *name = peek(p);
+
+	if (name->type != TK_VALUE) return;
+	if (p->program->label_count >= PARSER_MAX_LABELS) return;
+
+	label_entry_t *entry = &p->program->labels[p->program->label_count++];
+	entry->name     = name->start;
+	entry->name_len = name->len;
+	entry->index    = index;
+}
+
 /// @brief Collect all label names and their statement indices
 /// @param p
 static void collect_labels(parser_t *p)
@@ -112,28 +131,13 @@ static void collect_labels(parser_t *p)
 
 		if (t->type == TK_ARG_OPEN)  { depth++; advance(p); continue; }
 		if (t->type == TK_ARG_CLOSE) { depth--; advance(p); continue; }
-
 		if (t->type == TK_SEMI && depth == 0) { index++; advance(p); continue; }
 
-		if (t->type == TK_OPCODE && depth == 0)
+		if (t->type == TK_OPCODE && depth == 0 && strtol(t->start, NULL, 10) == LABEL)
 		{
-			if (strtol(t->start, NULL, 10) == LABEL)
-			{
-				advance(p);
-				if (check(p, TK_ARG_OPEN))
-				{
-					advance(p);
-					const token_t *name = peek(p);
-					if (name->type == TK_VALUE && p->program->label_count < PARSER_MAX_LABELS)
-					{
-						label_entry_t *entry = &p->program->labels[p->program->label_count++];
-						entry->name     = name->start;
-						entry->name_len = name->len;
-						entry->index    = index;
-					}
-				}
-				continue;
-			}
+			advance(p);
+			process_label(p, index);
+			continue;
 		}
 
 		advance(p);
@@ -176,6 +180,27 @@ static int resolve_label(const parser_t *p, const char *name, size_t len)
 	return -1;
 }
 
+/// @brief Handle jump opcode label resolution
+/// @param p
+/// @param n
+static void handle_jump_opcode(parser_t *p, okin_node_t *n)
+{
+	if (!is_jump_opcode(n->opcode)) return;
+	if (!n->args || n->argc == 0) return;
+
+	okin_node_t *label_arg = n->args[n->argc - 1];
+	int idx = resolve_label(p, label_arg->val_start, label_arg->val_len);
+
+	if (idx == -1)
+		parse_error(p, "undefined label");
+	else
+		label_arg->opcode = NODE_JUMP_TARGET;
+}
+
+// ======================
+// -- PRIVATE: ARGS & BODY
+// ======================
+
 /// @brief Parse a comma separated arg list inside < >, return node array
 /// @param p
 /// @param out_argc
@@ -195,11 +220,13 @@ static okin_node_t **parse_args(parser_t *p, int *out_argc)
 		}
 
 		okin_node_t *node = parse_node(p);
-		if (node) tmp[count++] = node;
+		if (node)
+			tmp[count++] = node;
 	}
 
 	*out_argc = count;
-	if (count == 0) return NULL;
+	if (count == 0)
+		return NULL;
 
 	okin_node_t **arr = alloc_node_array(p, count);
 	memcpy(arr, tmp, sizeof(okin_node_t *) * count);
@@ -222,7 +249,8 @@ static okin_node_t **parse_body(parser_t *p, int *out_len)
 	}
 
 	*out_len = count;
-	if (count == 0) return NULL;
+	if (count == 0)
+		return NULL;
 
 	okin_node_t **arr = alloc_node_array(p, count);
 	memcpy(arr, tmp, sizeof(okin_node_t *) * count);
@@ -236,7 +264,6 @@ static okin_node_t **parse_body(parser_t *p, int *out_len)
 static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 {
 	okin_node_t *n = alloc_node(p);
-
 	n->opcode = (uint8_t)strtol(t->start, NULL, 10);
 
 	if (t->type == TK_LIB_CALL)
@@ -262,16 +289,7 @@ static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 	if (!match(p, TK_ARG_CLOSE))
 		parse_error(p, "expected '>'");
 
-	if (is_jump_opcode(n->opcode))
-	{
-		okin_node_t *label_arg = n->args[n->argc - 1];
-		int idx = resolve_label(p, label_arg->val_start, label_arg->val_len);
-		if (idx == -1)
-			parse_error(p, "undefined label");
-		else
-			label_arg->opcode = NODE_JUMP_TARGET;
-	}
-
+	handle_jump_opcode(p, n);
 	return n;
 }
 
@@ -282,6 +300,20 @@ static okin_node_t *parse_statement(parser_t *p)
 {
 	const token_t *t = advance(p);
 	return parse_statement_from(p, t);
+}
+
+/// @brief Create a leaf node from a token
+/// @param p
+/// @param t
+/// @return okin_node_t*
+static okin_node_t *create_leaf_node(parser_t *p, const token_t *t)
+{
+	okin_node_t *n = alloc_node(p);
+	n->opcode    = NODE_LEAF;
+	n->tok       = t->type;
+	n->val_start = t->start;
+	n->val_len   = t->len;
+	return n;
 }
 
 /// @brief Parse a single value or nested node
@@ -296,13 +328,7 @@ static okin_node_t *parse_node(parser_t *p)
 		advance(p);
 		if (check(p, TK_ARG_OPEN))
 			return parse_statement_from(p, t);
-
-		okin_node_t *n = alloc_node(p);
-		n->opcode    = NODE_LEAF;
-		n->tok       = t->type;
-		n->val_start = t->start;
-		n->val_len   = t->len;
-		return n;
+		return create_leaf_node(p, t);
 	}
 
 	if (t->type == TK_OPCODE)
@@ -310,7 +336,6 @@ static okin_node_t *parse_node(parser_t *p)
 		advance(p);
 		if (check(p, TK_ARG_OPEN))
 			return parse_statement_from(p, t);
-
 		parse_error(p, "expected value or opcode");
 		return NULL;
 	}
@@ -318,12 +343,7 @@ static okin_node_t *parse_node(parser_t *p)
 	if (t->type == TK_VALUE || t->type == TK_STRING)
 	{
 		advance(p);
-		okin_node_t *n = alloc_node(p);
-		n->opcode    = NODE_LEAF;
-		n->tok       = t->type;
-		n->val_start = t->start;
-		n->val_len   = t->len;
-		return n;
+		return create_leaf_node(p, t);
 	}
 
 	parse_error(p, "expected value or opcode");

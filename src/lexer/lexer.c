@@ -121,6 +121,59 @@ static void read_string(lexer_t *l, char delim)
 /// @return int
 static int is_value_char(int c) { return c && !strchr("<>|,; \t\r\n\"'", c); }
 
+/// @brief Handle single character token
+/// @param l
+/// @param start
+/// @param line
+/// @param col
+static void handle_single_char_token(lexer_t *l, const char *start, int line, int col)
+{
+	advance(l);
+	token_type_t type = SINGLE_CHAR_TYPES[strchr(SINGLE_CHAR_TOKENS, *start) - SINGLE_CHAR_TOKENS];
+
+	if ((type == TK_COMMA || type == TK_ARG_CLOSE) && l->count > 0)
+	{
+		token_type_t prev = l->tokens[l->count - 1].type;
+		if (prev == TK_COMMA || prev == TK_ARG_OPEN)
+			push_error(l, start, 1);
+	}
+
+	push(l, type, start, 1, line, col);
+
+	if (type == TK_ARG_OPEN)  l->depth++;
+	if (type == TK_ARG_CLOSE) l->depth--;
+}
+
+/// @brief Handle numeric token (including lib call)
+/// @param l
+/// @param start
+/// @param line
+/// @param col
+static void handle_number_token(lexer_t *l, const char *start, int line, int col)
+{
+	if (*start == '-') advance(l);
+	read_while(l, isdigit);
+
+	if (peek(l) == '.')
+	{
+		advance(l);
+		read_while(l, isdigit);
+		push(l, TK_VALUE, start, (l->src + l->pos) - start, line, col);
+		return;
+	}
+
+	if (peek(l) == '~')
+	{
+		advance(l);
+		read_while(l, is_value_char);
+		push(l, TK_LIB_CALL, start, (l->src + l->pos) - start, line, col);
+		return;
+	}
+
+	token_type_t type = (l->depth > 0 && peek(l) != '<') ? TK_INT : TK_OPCODE;
+	push(l, type, start, (l->src + l->pos) - start, line, col);
+}
+
 // ======================
 // -- LEXER
 // ======================
@@ -161,48 +214,13 @@ void lexer_run(lexer_t *l)
 		const char *sc = strchr(SINGLE_CHAR_TOKENS, c);
 		if (sc)
 		{
-			advance(l);
-			token_type_t type = SINGLE_CHAR_TYPES[sc - SINGLE_CHAR_TOKENS];
-			if (type == TK_COMMA || type == TK_ARG_CLOSE)
-			{
-				if (l->count > 0)
-				{
-					token_type_t prev = l->tokens[l->count - 1].type;
-					if (prev == TK_COMMA || prev == TK_ARG_OPEN)
-						push_error(l, start, 1);
-				}
-			}
-			push(l, type, start, 1, line, col);
-
-			if (type == TK_ARG_OPEN)  l->depth++;
-			if (type == TK_ARG_CLOSE) l->depth--;
-
+			handle_single_char_token(l, start, line, col);
 			continue;
 		}
 
 		if (isdigit((unsigned char)c) || (c == '-' && isdigit((unsigned char)l->src[l->pos + 1])))
 		{
-			if (c == '-') advance(l);
-			read_while(l, isdigit);
-
-			if (peek(l) == '.')
-			{
-				advance(l);
-				read_while(l, isdigit);
-				push(l, TK_VALUE, start, (l->src + l->pos) - start, line, col);
-				continue;
-			}
-			if (peek(l) == '~')
-			{
-				advance(l);
-				read_while(l, is_value_char);
-				push(l, TK_LIB_CALL, start, (l->src + l->pos) - start, line, col);
-			}
-			else
-			{
-				token_type_t type = (l->depth > 0 && peek(l) != '<') ? TK_INT : TK_OPCODE;
-				push(l, type, start, (l->src + l->pos) - start, line, col);
-			}
+			handle_number_token(l, start, line, col);
 			continue;
 		}
 

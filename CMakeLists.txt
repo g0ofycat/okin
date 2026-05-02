@@ -10,6 +10,7 @@ add_executable(okin
 	src/parser/parser.c
 	src/parser/util/arena.c
 	src/interpreter/interpreter.cpp
+	src/interpreter/interpreter_opcodes.cpp
 
 	testing/core.c
 )
