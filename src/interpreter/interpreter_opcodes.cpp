@@ -302,6 +302,123 @@ void interpreter::exec_io(const okin_node_t *node, enviroment *env)
 }
 
 // ======================
+// -- EXEC: STRING
+// ======================
+
+/// @brief String stdlib handler
+/// @param node
+/// @param env
+void interpreter::exec_string(const okin_node_t *node, enviroment *env)
+{
+	std::string method(node->method, node->method_len);
+
+	if (method == "LEN")
+	{
+		std::string s = val_to_string(eval(node->args[0], env));
+		env->declare(tok_name(node->args[1]), make_int((int64_t)s.size()));
+	}
+	else if (method == "CONCAT")
+	{
+		std::string a = val_to_string(eval(node->args[0], env));
+		std::string b = val_to_string(eval(node->args[1], env));
+		env->declare(tok_name(node->args[2]), make_string(a + b));
+	}
+	else if (method == "SLICE")
+	{
+		std::string s = val_to_string(eval(node->args[0], env));
+		int64_t start = std::get<int64_t>(eval(node->args[1], env).data);
+		int64_t end   = std::get<int64_t>(eval(node->args[2], env).data);
+		if (start < 0 || end > (int64_t)s.size() || start > end)
+			runtime_error("STRING SLICE index out of bounds");
+		env->declare(tok_name(node->args[3]), make_string(s.substr(start, end - start)));
+	}
+	else if (method == "FIND")
+	{
+		std::string s       = val_to_string(eval(node->args[0], env));
+		std::string pattern = val_to_string(eval(node->args[1], env));
+		size_t pos          = s.find(pattern);
+		env->declare(tok_name(node->args[2]), make_int(pos == std::string::npos ? -1 : (int64_t)pos));
+	}
+	else if (method == "UPPER")
+	{
+		std::string s = val_to_string(eval(node->args[0], env));
+		std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+		env->declare(tok_name(node->args[1]), make_string(s));
+	}
+	else if (method == "LOWER")
+	{
+		std::string s = val_to_string(eval(node->args[0], env));
+		std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+		env->declare(tok_name(node->args[1]), make_string(s));
+	}
+	else runtime_error("unknown STRING method '" + method + "'");
+}
+
+// ======================
+// -- EXEC: MATH
+// ======================
+
+/// @brief Math stdlib handler
+/// @param node
+/// @param env
+void interpreter::exec_math(const okin_node_t *node, enviroment *env)
+{
+	std::string method(node->method, node->method_len);
+
+	if (method == "POW")
+	{
+		double base = to_double(eval(node->args[0], env));
+		double exp  = to_double(eval(node->args[1], env));
+		env->declare(tok_name(node->args[2]), make_float(std::pow(base, exp)));
+	}
+	else if (method == "SQRT")
+	{
+		double a = to_double(eval(node->args[0], env));
+		if (a < 0.0) runtime_error("SQRT of negative number");
+		env->declare(tok_name(node->args[1]), make_float(std::sqrt(a)));
+	}
+	else if (method == "ABS")
+	{
+		okin_val_t a      = eval(node->args[0], env);
+		okin_val_t result = (a.type == val_type_t::FLOAT)
+			? make_float(std::abs(to_double(a)))
+			: make_int(std::abs(std::get<int64_t>(a.data)));
+		env->declare(tok_name(node->args[1]), result);
+	}
+	else if (method == "MIN")
+	{
+		okin_val_t a   = eval(node->args[0], env);
+		okin_val_t b   = eval(node->args[1], env);
+		bool use_float = (a.type == val_type_t::FLOAT || b.type == val_type_t::FLOAT);
+		okin_val_t result = use_float
+			? make_float(std::min(to_double(a), to_double(b)))
+			: make_int(std::min(std::get<int64_t>(a.data), std::get<int64_t>(b.data)));
+		env->declare(tok_name(node->args[2]), result);
+	}
+	else if (method == "MAX")
+	{
+		okin_val_t a   = eval(node->args[0], env);
+		okin_val_t b   = eval(node->args[1], env);
+		bool use_float = (a.type == val_type_t::FLOAT || b.type == val_type_t::FLOAT);
+		okin_val_t result = use_float
+			? make_float(std::max(to_double(a), to_double(b)))
+			: make_int(std::max(std::get<int64_t>(a.data), std::get<int64_t>(b.data)));
+		env->declare(tok_name(node->args[2]), result);
+	}
+	else if (method == "FLOOR")
+	{
+		double a = to_double(eval(node->args[0], env));
+		env->declare(tok_name(node->args[1]), make_int((int64_t)std::floor(a)));
+	}
+	else if (method == "CEIL")
+	{
+		double a = to_double(eval(node->args[0], env));
+		env->declare(tok_name(node->args[1]), make_int((int64_t)std::ceil(a)));
+	}
+	else runtime_error("unknown MATH method '" + method + "'");
+}
+
+// ======================
 // -- EVAL: COMPARISON
 // ======================
 

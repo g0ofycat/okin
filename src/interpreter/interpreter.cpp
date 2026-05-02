@@ -34,6 +34,8 @@ void interpreter::init_tables()
 	EXEC_TABLE[JLT]      = &interpreter::exec_jmp;
 	EXEC_TABLE[LABEL]    = &interpreter::exec_label;
 	EXEC_TABLE[IO]       = &interpreter::exec_io;
+	EXEC_TABLE[STRING]   = &interpreter::exec_string;
+	EXEC_TABLE[MATH]     = &interpreter::exec_math;
 
 	EVAL_TABLE[EQ]    = &interpreter::eval_cmp;
 	EVAL_TABLE[NEQ]   = &interpreter::eval_cmp;

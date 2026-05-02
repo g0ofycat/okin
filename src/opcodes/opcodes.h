@@ -98,16 +98,14 @@
 					   //   ~WRITE<VALUE>                 - write value to stdout
 					   //   ~WRITELN<VALUE>               - write value to stdout with newline
 
-					   // string
 #define STRING   0xD0  // 0xD0: string lib; "208~<METHOD, ...ARGS>"
 					   //   ~LEN<STR, DEST>               - length of string
 					   //   ~CONCAT<A, B, DEST>           - concatenate two strings
 					   //   ~SLICE<STR, START, END, DEST> - substring
-					   //   ~FIND<STR, PATTERN, DEST>     - index of pattern, -1 if not found
+					   //   ~FIND<STR, PATTERN, DEST>     - first index of pattern, -1 if not found
 					   //   ~UPPER<STR, DEST>             - uppercase
 					   //   ~LOWER<STR, DEST>             - lowercase
 
-					   // math
 #define MATH     0xE0  // 0xE0: math lib; "224~<METHOD, ...ARGS>"
 					   //   ~POW<BASE, EXP, DEST>         - exponentiation
 					   //   ~SQRT<A, DEST>                - square root

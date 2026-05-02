@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -235,6 +236,8 @@ class interpreter {
 		void exec_jmp(const okin_node_t *node, enviroment *env);
 		void exec_label(const okin_node_t *node, enviroment *env);
 		void exec_io(const okin_node_t *node, enviroment *env);
+		void exec_string(const okin_node_t *node, enviroment *env);
+		void exec_math(const okin_node_t *node, enviroment *env);
 
 		// ======================
 		// -- EVAL HANDLERS
