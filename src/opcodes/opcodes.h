@@ -44,7 +44,7 @@
 #define RET      0x12  // 0x12: return value from function; "18<VALUE>"
 
 // iterators
-#define FOR      0x20  // 0x20: range iterator; "32<ITER, START, END, STEP|<LOGIC>>"
+#define FOR      0x20  // 0x20: range iterator; "32<CURRENT_INDEX, START, END, STEP|<LOGIC>>"
 #define WHILE    0x21  // 0x21: conditional iterator; "33<COND|<LOGIC>>"
 #define BREAK    0x22  // 0x22: break out of iterator; "34<empty>"
 
