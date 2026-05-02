@@ -60,9 +60,6 @@ Okin is designed to be written without line breaks. A complete program:
 2<SUM, 0>;2<I, 1>;32<I, 1, 11, 1|64<SUM, I, SUM>>;192~WRITELN<SUM>
 ```
 
-### Program unfolding
-Okin source can be **unfolded** into a BASIC-like representation for easier reading and data flow analysis, then **refolded** back into compact Okin on demand. Models choose when to unfold using specific opcodes, useful when programs grow complex enough to require explicit tracing.
-
 ### Soft typing
 Variables are dynamically typed. Type is inferred on assignment and can change on reassignment via `SET`. Type mismatches at runtime **throw an error**.
 
@@ -80,7 +77,3 @@ Okin throws on:
 - Calling undefined functions
 
 Errors halt execution and surface a message, allowing the model to rewrite and retry.
-
----
-
-> **TL;DR** - Okin is a bytecode-like language for LLMs to write token-efficient, executable programs with a minimal and predictable instruction set.

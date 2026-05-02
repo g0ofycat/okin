@@ -150,7 +150,7 @@ void interpreter::exec_aget(const okin_node_t *node, enviroment *env)
 	int64_t idx     = std::get<int64_t>(eval(node->args[1], env).data);
 	const auto &arr = *std::get<okin_array_t>(arr_v.data);
 	if (idx < 0 || idx >= (int64_t)arr.size()) runtime_error("AGET index out of bounds");
-	env->declare(tok_name(node->args[2]), arr[idx]);
+	env->set(tok_name(node->args[2]), arr[idx]);
 }
 
 /// @brief Set value at array index
@@ -185,7 +185,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 
 	if (node->opcode == ADD && a.type == val_type_t::STR)
 	{
-		env->declare(dest, make_string(val_to_string(a) + val_to_string(b)));
+		env->set(dest, make_string(val_to_string(a) + val_to_string(b)));
 		return;
 	}
 
@@ -201,7 +201,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 			case DIV: if (bf == 0.0) runtime_error("division by zero"); r = af / bf; break;
 			case MOD: r = std::fmod(af, bf); break;
 		}
-		env->declare(dest, make_float(r));
+		env->set(dest, make_float(r));
 	}
 	else
 	{
@@ -216,7 +216,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 			case DIV: if (bi == 0) runtime_error("division by zero"); r = ai / bi; break;
 			case MOD: if (bi == 0) runtime_error("modulo by zero");   r = ai % bi; break;
 		}
-		env->declare(dest, make_int(r));
+		env->set(dest, make_int(r));
 	}
 }
 

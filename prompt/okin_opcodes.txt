@@ -43,12 +43,12 @@ All available opcodes in Okin to use:
 #define RET      0x12  // 0x12: return value from function; "18<VALUE>"
 
 // iterators
-#define FOR      0x20  // 0x20: range iterator; "32<START, END, STEP|<LOGIC>>"
+#define FOR      0x20  // 0x20: range iterator; "32<ITER, START, END, STEP|<LOGIC>>"
 #define WHILE    0x21  // 0x21: conditional iterator; "33<COND|<LOGIC>>"
 #define BREAK    0x22  // 0x22: break out of iterator; "34<empty>"
 
 // data
-#define ARRAY    0x30  // 0x30: init contiguous memory block; "48<VAL, VAL, ...>"
+#define ARRAY    0x30  // 0x30: init contiguous memory block; "48<VAL, VAL, ...>"; dynamic, out of bounds gets replaced by 0
 #define IN       0x31  // 0x31: membership check inside memory block; "49<ITEM, ARRAY>"
 #define AGET     0x32  // 0x32: get value at array index; "50<ARRAY, INDEX, DEST>"
 #define ASET     0x33  // 0x33: set value at array index; "51<ARRAY, INDEX, VALUE>"
