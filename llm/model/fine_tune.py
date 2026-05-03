@@ -39,7 +39,7 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
-    dtype=torch.bfloat16,
+    dtype=torch.float32,
     device_map="cpu",
     low_cpu_mem_usage=True,
 )
@@ -47,7 +47,8 @@ model = AutoModelForCausalLM.from_pretrained(
 lora_config = LoraConfig(
     r=16,
     lora_alpha=32,
-    target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+    target_modules=["q_proj", "v_proj", "k_proj", "o_proj",
+                    "gate_proj", "up_proj", "down_proj"],
     lora_dropout=0.05,
     task_type="CAUSAL_LM",
 )
@@ -66,7 +67,7 @@ args = SFTConfig(
     gradient_checkpointing_kwargs={"use_reentrant": False},
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
-    num_train_epochs=1,
+    num_train_epochs=5,
     learning_rate=2e-4,
     logging_steps=10,
     save_strategy="epoch",
@@ -85,7 +86,9 @@ trainer = SFTTrainer(
 )
 
 trainer.train()
-trainer.save_model(OUTPUT_DIR)
+
+merged = trainer.model.merge_and_unload()
+merged.save_pretrained(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
 
 # ======================
@@ -100,7 +103,6 @@ convert    = os.path.join(LLAMA_CPP, "convert_hf_to_gguf.py")
 quantize   = os.path.join(LLAMA_CPP, "build", "bin", "llama-quantize.exe")
 
 print("Converting to GGUF...")
-
 subprocess.run([sys.executable, convert, OUTPUT_DIR, "--outfile", gguf_fp16, "--outtype", "f16"], check=True)
 
 print(f"Quantizing to {QUANT_TYPE}...")
