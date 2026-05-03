@@ -97,9 +97,9 @@ tokenizer.save_pretrained(OUTPUT_DIR)
 
 os.makedirs(GGUF_DIR, exist_ok=True)
 
-gguf_fp16  = os.path.join(GGUF_DIR, "okin-qwen-fp16.gguf")
+gguf_fp16    = os.path.join(GGUF_DIR, "okin-qwen-fp16.gguf")
 # gguf_final = os.path.join(GGUF_DIR, f"okin-qwen-{QUANT_TYPE.lower()}.gguf")
-convert    = os.path.join(LLAMA_CPP, "build", "bin", "convert_hf_to_gguf.py")
+convert      = os.path.join(LLAMA_CPP, "convert_hf_to_gguf.py")
 # quantize   = os.path.join(LLAMA_CPP, "build", "bin", "llama-quantize.exe")
 
 print("Converting to GGUF...")
