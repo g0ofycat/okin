@@ -24,7 +24,7 @@ OUTPUT_DIR  = os.path.join(BASE_DIR, "./okin_llm")
 
 GGUF_DIR    = os.path.join(BASE_DIR, "./gguf")
 LLAMA_CPP   = os.path.join(BASE_DIR, "../../llama.cpp")
-QUANT_TYPE  = "Q4_K_M"
+# QUANT_TYPE  = "Q4_K_M"
 
 # ======================
 # -- DATA
@@ -98,16 +98,18 @@ tokenizer.save_pretrained(OUTPUT_DIR)
 os.makedirs(GGUF_DIR, exist_ok=True)
 
 gguf_fp16  = os.path.join(GGUF_DIR, "okin-qwen-fp16.gguf")
-gguf_final = os.path.join(GGUF_DIR, f"okin-qwen-{QUANT_TYPE.lower()}.gguf")
-convert    = os.path.join(LLAMA_CPP, "convert_hf_to_gguf.py")
-quantize   = os.path.join(LLAMA_CPP, "build", "bin", "llama-quantize.exe")
+# gguf_final = os.path.join(GGUF_DIR, f"okin-qwen-{QUANT_TYPE.lower()}.gguf")
+convert    = os.path.join(LLAMA_CPP, "build", "bin", "convert_hf_to_gguf.py")
+# quantize   = os.path.join(LLAMA_CPP, "build", "bin", "llama-quantize.exe")
 
 print("Converting to GGUF...")
 subprocess.run([sys.executable, convert, OUTPUT_DIR, "--outfile", gguf_fp16, "--outtype", "f16"], check=True)
 
+"""
 print(f"Quantizing to {QUANT_TYPE}...")
 subprocess.run([quantize, gguf_fp16, gguf_final, QUANT_TYPE], check=True)
+"""
 
-os.remove(gguf_fp16)
+# os.remove(gguf_fp16)
 
-print(f"Done: {gguf_final}")
+print(f"Done: {gguf_fp16}")
