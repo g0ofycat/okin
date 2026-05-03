@@ -1,6 +1,9 @@
 build
 
 llm/okin_llm
+llm/gguf
+
+llm/model/data
 
 .venv
 .cache

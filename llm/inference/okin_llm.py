@@ -6,7 +6,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 # ======================
-# -- CONFIG
+# -- PATHS
 # ======================
 
 BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -17,10 +17,19 @@ ACTIVATION_FILE = os.path.join(PROMPT_DIR, "okin_activation.txt")
 DATA_DIR      = os.path.join(BASE_DIR, "./model/data")
 OUTPUT_FILE   = os.path.join(DATA_DIR, "llm_output.txt")
 
+# ======================
+# -- CONFIG
+# ======================
+
 LM_BASE_URL     = "http://localhost:1234/v1"
 LM_API_KEY      = "lm-studio"
 LM_MODEL        = "local-model"
 MAX_RETRIES     = 3
+RECURSE_PROMPT  = 1
+
+# ======================
+# -- PROMPTS
+# ======================
 
 INITIAL_PROMPT = (
     "Write 10 Okin test cases.\n"
@@ -53,8 +62,6 @@ RECURSE_MSG = (
     "Write 10 more Okin test cases, different from the ones above.\n"
     "Output only the okin code block."
 )
-
-RECURSE_PROMPT = 1
 
 # ======================
 # -- SETUP
@@ -204,6 +211,10 @@ def main():
         messages.append({"role": "assistant", "content": response})
 
         print()
+
+# ======================
+# -- INIT
+# ======================
 
 if __name__ == "__main__":
     system_prompt = load_prompts()

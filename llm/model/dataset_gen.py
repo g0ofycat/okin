@@ -1,7 +1,11 @@
+import os
 import re
 import json
-import os
 import subprocess
+
+# ======================
+# -- PATHS
+# ======================
 
 BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OKIN_BIN        = os.path.join(BASE_DIR, "../build", "okin.exe")
@@ -10,6 +14,10 @@ DATA_DIR        = os.path.join(BASE_DIR, "model/data")
 DATASET_FILE    = os.path.join(DATA_DIR, "okin_dataset.jsonl")
 
 LLM_OUTPUT      = os.path.join(DATA_DIR, "llm_output.txt")
+
+# ======================
+# -- EXTRACTION & RUNNING
+# ======================
 
 def run_okin(code: str) -> tuple[bool, str]:
     code = code.strip().replace("\n", ";").replace('\\"', '"').replace("\\'", "'")
@@ -46,6 +54,10 @@ def parse_and_run(llm_output: str) -> list[dict]:
 
     return results
 
+# ======================
+# -- SAVE
+# ======================
+
 def save_dataset(results: list[dict], system_prompt: str = "", task: str = "") -> None:
     os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -64,6 +76,10 @@ def save_dataset(results: list[dict], system_prompt: str = "", task: str = "") -
             }
 
             f.write(json.dumps(entry) + "\n")
+
+# ======================
+# -- INIT
+# ======================
 
 if __name__ == "__main__":
     results = parse_and_run(open(LLM_OUTPUT).read())
