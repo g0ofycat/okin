@@ -167,7 +167,7 @@ okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
 	}
 
 	okin_val_t *v = env->get(raw);
-	if (!v)                              runtime_error("undefined variable '" + raw + "'");
+	if (!v)                              runtime_error("undefined variable '" + raw + "'. Define it using the 0x02 (2) opcode before using it");
 	if (v->type == val_type_t::NIL_VAL)  runtime_error("operation on nil '" + raw + "'");
 	return *v;
 }

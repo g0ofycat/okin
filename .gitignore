@@ -1,3 +1,7 @@
 build
 
+llm/okin_llm
+
+.venv
 .cache
+.vscode

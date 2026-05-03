@@ -18,6 +18,10 @@ Variable names used inside loops must be declared before the loop begins.
 FOR takes <NAME, START, END, STEP> where END is exclusive.
 WHILE is better suited for problems without a fixed iteration count.
 
+CALL with a DEST argument automatically declares the destination variable.
+You do NOT need to pre-declare DEST before a CALL.
+All other DEST arguments (arithmetic, string, math) MUST be pre-declared with VAR (opcode 2).
+
 When to use Okin:
 - Arithmetic, counting, iteration, tracking state
 - String operations on non-trivial inputs

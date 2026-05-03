@@ -64,7 +64,7 @@ CORRECT:
 2.7: Functions
 Define with opcode 16 (FUNCTION), invoke with opcode 17 (CALL), return with opcode 18 (RET):
   16<GREET|192~WRITELN<"Hello">>;17<GREET>
-  16<ADD_ONE, N|2<R, 0>;64<N, 1, R>;18<R>>;17<ADD_ONE, 5, RESULT>
+  2<RESULT, 0>;16<ADD_ONE, N|2<R, 0>;64<N, 1, R>;18<R>>;17<ADD_ONE, 5, RESULT>
 
 2.8: Global variables
 Use opcode 4 (GLOBAL) inside a function to mark a var as writable from inner scope:
