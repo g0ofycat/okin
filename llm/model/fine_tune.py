@@ -8,6 +8,8 @@ from peft import LoraConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from trl import SFTTrainer, SFTConfig
 
+torch.set_num_threads(os.cpu_count())
+
 # ======================
 # -- PATHS
 # ======================
@@ -45,12 +47,11 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 lora_config = LoraConfig(
-    r=16,
-    lora_alpha=32,
-    target_modules=["q_proj", "v_proj", "k_proj", "o_proj",
-                    "gate_proj", "up_proj", "down_proj"],
+    r=8,
+    lora_alpha=16,
+    target_modules=["q_proj", "v_proj"],
     lora_dropout=0.05,
-    task_type="CAUSAL_LM",
+    task_type="QUESTION_ANS",
 )
 
 # ======================
@@ -65,15 +66,15 @@ args = SFTConfig(
     assistant_only_loss=True,
     fp16=True,
     gradient_checkpointing_kwargs={"use_reentrant": False},
-    per_device_train_batch_size=2,
-    gradient_accumulation_steps=4,
-    num_train_epochs=5,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=8,
+    num_train_epochs=3,
     learning_rate=2e-4,
     logging_steps=10,
     save_strategy="epoch",
     warmup_steps=10,
     lr_scheduler_type="cosine",
-    max_length=512,
+    max_length=256,
     eos_token="<|im_end|>",
 )
 
@@ -88,6 +89,7 @@ trainer = SFTTrainer(
 trainer.train()
 
 merged = trainer.model.merge_and_unload()
+
 merged.save_pretrained(OUTPUT_DIR)
 tokenizer.save_pretrained(OUTPUT_DIR)
 
