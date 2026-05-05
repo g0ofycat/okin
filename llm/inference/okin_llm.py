@@ -33,8 +33,9 @@ RECURSE_PROMPT  = 1
 
 INITIAL_PROMPT = (
     "Write 10 Okin test cases.\n"
-    "You are encouraged to be creative and cover a wide range of features and edge cases, but make sure to follow the rules. Do not use comments in your code\n\n"
+    "Be creative and cover a wide range of features and edge cases.\n\n"
     "CRITICAL RULES (violations will cause runtime errors):\n"
+    "- NO comments in your code\n"
     "- INLINE MATH: Code like 'Y-1, X+1, Z*2' isn't valid, you must use the opcode for specific arithmetic operations\n"
     "- ALL variables must be declared with opcode 2 BEFORE they are used\n"
     "- WRONG: 64<X, Y, Z> before declaring Y and Z\n"
@@ -45,17 +46,21 @@ INITIAL_PROMPT = (
     "- CORRECT: 2<SUM,0>;32<I,0,5,1|64<SUM,I,SUM>>;192~WRITELN<SUM>\n"
     "- WHILE loops need a variable that changes inside the body or they loop forever\n"
     "- Each test case must end with 192~WRITELN to print the result\n"
-    "- One test case per line, no duplicates (DON'T OVERFIT, DON'T WRITE SIMILAR TEST CASES THAT ONLY HAVE 1 THING CHANGED)\n\n"
-    "Coverage requirements (at least 5 of each):\n"
-    "- Basic arithmetic: ADD, SUB, MUL, DIV, MOD with different values each time\n"
-    "- FOR loops: different ranges, steps, and accumulation patterns\n"
-    "- WHILE loops: different conditions\n"
-    "- IF conditionals: GT, LT, EQ, NEQ, GTE, LTE\n"
-    "- String ops: LEN, CONCAT, SLICE, FIND, UPPER, LOWER on different strings\n"
-    "- Array ops: AGET, ASET, IN on different arrays\n"
-    "- Math lib: POW, SQRT, ABS, MIN, MAX, FLOOR, CEIL\n"
-    "- Functions: FUNCTION + CALL with at least 2 different functions\n\n"
-    "Output only the okin code block."
+    "- No duplicates, no similar test cases with only 1 value changed\n\n"
+    "Coverage requirements (at least 1 of each):\n"
+    "- Basic arithmetic: ADD, SUB, MUL, DIV, MOD\n"
+    "- FOR loop\n"
+    "- WHILE loop\n"
+    "- IF conditional\n"
+    "- String ops: LEN, CONCAT, SLICE, FIND, UPPER, or LOWER\n"
+    "- Array ops: AGET, ASET, or IN\n"
+    "- Math lib: POW, SQRT, ABS, MIN, MAX, FLOOR, or CEIL\n"
+    "- Function: FUNCTION + CALL\n\n"
+    "Format each test case like this:\n"
+    "TASK: <one sentence describing what the code does>\n"
+    "```okin\n"
+    "<code>\n"
+    "```\n"
 )
 
 RECURSE_MSG = (
@@ -231,15 +236,15 @@ if __name__ == "__main__":
         print(f"\n[{i + 1} / {RECURSE_PROMPT}]\n")
         print("LLM: ", end="", flush=True)
 
-        response = chat(messages)
-        if response is None:
+        content = stream_completion(messages)
+        if content is None:
             print("[no response]")
             continue
 
-        all_responses.append(response)
+        all_responses.append(content)
 
-        messages.append({"role": "assistant", "content": response})
-        messages.append({"role": "user", "content": RECURSE_MSG})
+        messages.append({"role": "assistant", "content": content})
+        messages.append({"role": "user",      "content": RECURSE_MSG})
 
     with open(OUTPUT_FILE, "w") as f:
         f.write("\n\n".join(all_responses))
