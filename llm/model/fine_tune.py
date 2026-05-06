@@ -102,7 +102,7 @@ os.makedirs(GGUF_DIR, exist_ok=True)
 gguf_fp16    = os.path.join(GGUF_DIR, "okin-qwen-fp16.gguf")
 # gguf_final = os.path.join(GGUF_DIR, f"okin-qwen-{QUANT_TYPE.lower()}.gguf")
 convert      = os.path.join(LLAMA_CPP, "convert_hf_to_gguf.py")
-# quantize   = os.path.join(LLAMA_CPP, "build", "bin", "llama-quantize.exe")
+# quantize   = os.path.join(LLAMA_CPP, "build", "bin", "llama-quantize")
 
 print("Converting to GGUF...")
 subprocess.run([sys.executable, convert, OUTPUT_DIR, "--outfile", gguf_fp16, "--outtype", "f16"], check=True)
