@@ -14,7 +14,7 @@ torch.set_num_threads(os.cpu_count())
 # -- PATHS
 # ======================
 
-MODEL_ID   = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+MODEL_ID   = "Qwen/Qwen2.5-Coder-7B-Instruct"
 DATASET_ID = "g0ofycatz/OkinDataset"
 
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
