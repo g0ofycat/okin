@@ -20,8 +20,8 @@ void interpreter::exec_var(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_set(const okin_node_t *node, enviroment *env)
 {
-	std::string name = tok_name(node->args[0]);
-	if (!env->get(name)) runtime_error("SET on undefined variable '" + name + "'");
+	std::string_view name = tok_name(node->args[0]);
+	if (!env->get(name)) runtime_error("SET on undefined variable '" + std::string(name) + "'");
 	env->set(name, eval(node->args[1], env));
 }
 
@@ -50,10 +50,10 @@ void interpreter::exec_function(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 {
-	std::string name = tok_name(node->args[0]);
+	std::string_view name = tok_name(node->args[0]);
 	auto it = functions.find(name);
 	if (it == functions.end())
-		runtime_error("call to undefined function '" + name + "'");
+		runtime_error("call to undefined function '" + std::string(name) + "'");
 
 	const okin_node_t *fn = it->second;
 	auto fn_env = std::make_unique<enviroment>(global_env);
@@ -97,7 +97,7 @@ void interpreter::exec_ret(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_for(const okin_node_t *node, enviroment *env)
 {
-	std::string iter = tok_name(node->args[0]);
+	std::string_view iter = tok_name(node->args[0]);
 	int64_t start    = std::get<int64_t>(eval(node->args[1], env).data);
 	int64_t end      = std::get<int64_t>(eval(node->args[2], env).data);
 	int64_t step     = std::get<int64_t>(eval(node->args[3], env).data);
@@ -158,7 +158,7 @@ void interpreter::exec_aget(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_aset(const okin_node_t *node, enviroment *env)
 {
-	std::string name = tok_name(node->args[0]);
+	std::string_view name = tok_name(node->args[0]);
 	okin_val_t *v    = env->get(name);
 	if (!v || v->type != val_type_t::ARR) runtime_error("ASET requires an array variable");
 	int64_t idx  = std::get<int64_t>(eval(node->args[1], env).data);
@@ -178,7 +178,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 {
 	okin_val_t a     = eval(node->args[0], env);
 	okin_val_t b     = eval(node->args[1], env);
-	std::string dest = tok_name(node->args[2]);
+	std::string_view dest = tok_name(node->args[2]);
 
 	if (a.type == val_type_t::NIL_VAL || b.type == val_type_t::NIL_VAL)
 		runtime_error("arithmetic on nil");
@@ -279,7 +279,7 @@ void interpreter::exec_label(const okin_node_t *node, enviroment *env) {}
 /// @param env
 void interpreter::exec_io(const okin_node_t *node, enviroment *env)
 {
-	std::string method(node->method, node->method_len);
+	std::string_view method(node->method, node->method_len);
 
 	if (method == "WRITELN")
 	{
@@ -298,7 +298,7 @@ void interpreter::exec_io(const okin_node_t *node, enviroment *env)
 		std::getline(std::cin, input);
 		env->declare(tok_name(node->args[0]), make_string(input));
 	}
-	else runtime_error("unknown IO method '" + method + "'");
+	else runtime_error("unknown IO method '" + std::string(method) + "'");
 }
 
 // ======================
@@ -310,7 +310,7 @@ void interpreter::exec_io(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_string(const okin_node_t *node, enviroment *env)
 {
-	std::string method(node->method, node->method_len);
+	std::string_view method(node->method, node->method_len);
 
 	if (method == "LEN")
 	{
@@ -351,7 +351,7 @@ void interpreter::exec_string(const okin_node_t *node, enviroment *env)
 		std::transform(s.begin(), s.end(), s.begin(), ::tolower);
 		env->declare(tok_name(node->args[1]), make_string(s));
 	}
-	else runtime_error("unknown STRING method '" + method + "'");
+	else runtime_error("unknown STRING method '" + std::string(method) + "'");
 }
 
 // ======================
@@ -363,7 +363,7 @@ void interpreter::exec_string(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 {
-	std::string method(node->method, node->method_len);
+	std::string_view method(node->method, node->method_len);
 
 	if (method == "POW")
 	{
@@ -415,7 +415,7 @@ void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 		double a = to_double(eval(node->args[0], env));
 		env->declare(tok_name(node->args[1]), make_int((int64_t)std::ceil(a)));
 	}
-	else runtime_error("unknown MATH method '" + method + "'");
+	else runtime_error("unknown MATH method '" + std::string(method) + "'");
 }
 
 // ======================
@@ -431,21 +431,23 @@ okin_val_t interpreter::eval_cmp(const okin_node_t *node, enviroment *env)
 	okin_val_t a = eval(node->args[0], env);
 	okin_val_t b = eval(node->args[1], env);
 
-	if (node->opcode == EQ)  return make_bool(val_to_string(a) == val_to_string(b));
-	if (node->opcode == NEQ) return make_bool(val_to_string(a) != val_to_string(b));
-
 	if (a.type == val_type_t::INT && b.type == val_type_t::INT)
 	{
 		int64_t ai = std::get<int64_t>(a.data);
 		int64_t bi = std::get<int64_t>(b.data);
 		switch (node->opcode)
 		{
+			case EQ:  return make_bool(ai == bi);
+			case NEQ: return make_bool(ai != bi);
 			case GT:  return make_bool(ai >  bi);
 			case LT:  return make_bool(ai <  bi);
 			case GTE: return make_bool(ai >= bi);
 			case LTE: return make_bool(ai <= bi);
 		}
 	}
+
+	if (node->opcode == EQ)  return make_bool(val_to_string(a) == val_to_string(b));
+	if (node->opcode == NEQ) return make_bool(val_to_string(a) != val_to_string(b));
 
 	double af = to_double(a), bf = to_double(b);
 	switch (node->opcode)

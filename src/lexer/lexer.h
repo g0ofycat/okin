@@ -6,6 +6,7 @@ extern "C" {
 #define LEXER_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 // ======================
 // -- CONSTS
@@ -60,11 +61,23 @@ typedef struct
 	int         line;
 	int         col;
 	int         depth;
+	int         has_labels;
 } lexer_t;
 
 // ======================
 // -- PUBLIC
 // ======================
+
+/// @brief atoi, but fast
+/// @param s
+/// @param len
+static inline uint8_t fast_atoi(const char *s, size_t len) {
+	uint8_t n = 0;
+	for (size_t i = 0; i < len; i++)
+		n = n * 10 + (s[i] - '0');
+
+	return n;
+}
 
 /// @brief Initialize lexer with source string
 /// @param src Source string to lex

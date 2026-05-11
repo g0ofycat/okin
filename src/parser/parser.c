@@ -121,6 +121,8 @@ static void process_label(parser_t *p, int index)
 /// @param p
 static void collect_labels(parser_t *p)
 {
+	if (!p->lexer->has_labels) return;
+
 	size_t saved_pos = p->pos;
 	int index = 0;
 	int depth = 0;
@@ -133,7 +135,7 @@ static void collect_labels(parser_t *p)
 		if (t->type == TK_ARG_CLOSE) { depth--; advance(p); continue; }
 		if (t->type == TK_SEMI && depth == 0) { index++; advance(p); continue; }
 
-		if (t->type == TK_OPCODE && depth == 0 && strtol(t->start, NULL, 10) == LABEL)
+		if (t->type == TK_OPCODE && depth == 0 && fast_atoi(t->start, t->len == LABEL))
 		{
 			advance(p);
 			process_label(p, index);
@@ -266,7 +268,7 @@ static okin_node_t **parse_body(parser_t *p, int *out_len)
 static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 {
 	okin_node_t *n = alloc_node(p);
-	n->opcode = (uint8_t)strtol(t->start, NULL, 10);
+	n->opcode = (uint8_t)fast_atoi(t->start, t->len);
 
 	if (t->type == TK_LIB_CALL)
 	{

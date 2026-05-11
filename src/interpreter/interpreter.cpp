@@ -61,7 +61,7 @@ enviroment::enviroment(enviroment *parent) : parent(parent) {}
 /// @brief Get variable value by name
 /// @param name
 /// @return okin_val_t*
-okin_val_t *enviroment::get(const std::string &name) {
+okin_val_t *enviroment::get(const std::string_view &name) {
 	auto it = vars.find(name);
 	if (it != vars.end()) return &it->second;
 	if (parent) return parent->get(name);
@@ -71,7 +71,7 @@ okin_val_t *enviroment::get(const std::string &name) {
 /// @brief Set a variable value
 /// @param name
 /// @param val
-void enviroment::set(const std::string &name, const okin_val_t &val)
+void enviroment::set(const std::string_view &name, const okin_val_t &val)
 {
 	if (globals.count(name))
 	{
@@ -107,14 +107,14 @@ void enviroment::set(const std::string &name, const okin_val_t &val)
 /// @brief Declare a variable (current scope)
 /// @param name
 /// @param val
-void enviroment::declare(const std::string &name, const okin_val_t &val)
+void enviroment::declare(const std::string_view &name, const okin_val_t &val)
 {
 	vars[name] = val;
 }
 
 /// @brief Mark variable as global
 /// @param name
-void enviroment::mark_global(const std::string &name)
+void enviroment::mark_global(const std::string_view &name)
 {
 	globals[name] = true;
 }
@@ -166,9 +166,12 @@ okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
 		return { val_type_t::INT, (int64_t)std::stoll(raw) };
 	}
 
-	okin_val_t *v = env->get(raw);
-	if (!v)                              runtime_error("undefined variable '" + raw + "'. Define it using the 0x02 (2) opcode before using it");
-	if (v->type == val_type_t::NIL_VAL)  runtime_error("operation on nil '" + raw + "'");
+	std::string_view key(node->val_start, node->val_len);
+	okin_val_t *v = env->get(key);
+
+	if (!v) runtime_error("undefined variable '" + std::string(key) + "'");
+	if (v->type == val_type_t::NIL_VAL) runtime_error("operation on nil");
+
 	return *v;
 }
 

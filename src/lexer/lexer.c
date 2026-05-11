@@ -154,6 +154,10 @@ static void handle_number_token(lexer_t *l, const char *start, int line, int col
 	if (*start == '-') advance(l);
 	read_while(l, isdigit);
 
+	size_t len = (l->src + l->pos) - start;
+	if (fast_atoi(start, len) == 0x90) // label opcode
+		l->has_labels = 1;
+
 	if (peek(l) == '.')
 	{
 		advance(l);

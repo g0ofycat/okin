@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <memory>
 #include <unordered_map>
 #include <cstdint>
@@ -54,7 +55,7 @@ struct return_signal { okin_val_t value; };
 struct call_frame_t
 {
 	int         return_ip;
-	std::string dest;
+	std::string_view dest;
 	bool        has_dest;
 };
 
@@ -116,8 +117,8 @@ inline bool val_to_bool(const okin_val_t &v) {
 /// @brief Get token name
 /// @param n
 /// @return std::string
-inline std::string tok_name(const okin_node_t *n) {
-	return std::string(n->val_start, n->val_len);
+inline std::string_view tok_name(const okin_node_t *n) {
+	return { n->val_start, n->val_len };
 }
 
 /// @brief ::FLOAT or int64_t to double
@@ -136,8 +137,8 @@ inline double to_double(const okin_val_t &v)
 class enviroment {
 	public:
 		enviroment *parent;
-		std::unordered_map<std::string, okin_val_t> vars;
-		std::unordered_map<std::string, bool>       globals;
+		std::unordered_map<std::string_view, okin_val_t> vars;
+		std::unordered_map<std::string_view, bool>       globals;
 
 		/// @brief Enviroment constructor
 		/// @param parent: Parent enviroment (default nullptr)
@@ -146,21 +147,21 @@ class enviroment {
 		/// @brief Get variable value by name
 		/// @param name
 		/// @return okin_val_t*
-		okin_val_t *get(const std::string &name);
+		okin_val_t *get(const std::string_view &name);
 
 		/// @brief Set a variable value
 		/// @param name
 		/// @param val
-		void set(const std::string &name, const okin_val_t &val);
+		void set(const std::string_view &name, const okin_val_t &val);
 
 		/// @brief Declare a variable (current scope)
 		/// @param name
 		/// @param val
-		void declare(const std::string &name, const okin_val_t &val);
+		void declare(const std::string_view &name, const okin_val_t &val);
 
 		/// @brief Mark variable as global
 		/// @param name
-		void mark_global(const std::string &name);
+		void mark_global(const std::string_view &name);
 };
 
 // ======================
@@ -180,7 +181,7 @@ class interpreter {
 		// -- DATA
 		// ======================
 
-		std::unordered_map<std::string, const okin_node_t *> functions;
+		std::unordered_map<std::string_view, const okin_node_t *> functions;
 		std::vector<call_frame_t>                            call_stack;
 
 		const okin_program_t *program;
