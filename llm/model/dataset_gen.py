@@ -58,7 +58,7 @@ def parse_and_run(llm_output: str) -> list[dict]:
 # -- SAVE
 # ======================
 
-def save_dataset(results: list[dict], system_prompt: str = "", task: str = "") -> None:
+def save_dataset(results: list[dict], system_prompt: str = "", _: str = "") -> None:
     os.makedirs(DATA_DIR, exist_ok=True)
 
     with open(DATASET_FILE, "a") as f:
