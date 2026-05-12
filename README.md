@@ -57,7 +57,7 @@ Every instruction follows this schema:
 ### Single-line programs
 Okin is designed to be written without line breaks. A complete program:
 ```
-2<SUM, 0>;2<I, 1>;32<I, 1, 11, 1|64<SUM, I, SUM>>;192~WRITELN<SUM>
+2<SUM, 0>;32<I, 1, 11, 1|64<SUM, I, SUM>>;192~WRITELN<SUM>
 ```
 
 ### Soft typing

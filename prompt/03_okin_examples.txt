@@ -74,9 +74,9 @@ Use opcode 4 (GLOBAL) inside a function to mark a var as writable from inner sco
 RULE: Arrays are always declared using VAR (opcode 2) with opcode 48 nested inside.
 RULE: 48 is NEVER a standalone statement. It is ONLY valid as the value in a VAR declaration.
   2<ARR, 48<1, 2, 3, 4, 5>>       -- ARR = [1, 2, 3, 4, 5]
-  2<FOUND, 49<2, ARR>>             -- FOUND = (2 in ARR)
-  2<FIRST, 0>;50<ARR, 0, FIRST>    -- FIRST = ARR[0] = 1
-  51<ARR, 0, 99>                   -- ARR[0] = 99
+  2<FOUND, 49<2, ARR>>            -- FOUND = (2 in ARR)
+  2<FIRST, 0>;50<ARR, 0, FIRST>   -- FIRST = ARR[0] = 1
+  51<ARR, 0, 99>                  -- ARR[0] = 99
 
 WRONG:
   48<1, 2, 3>;50<ARR, 0, X>   -- ERROR: 48 is not a statement, ARR was never declared
@@ -98,8 +98,8 @@ RULE: DEST in string methods must be declared with opcode 2 before calling the m
 2.12: Math library
 Use opcode 224 (MATH) with a method. Result always goes into a pre-declared DEST variable.
   2<R, 0>;224~POW<2, 10, R>;192~WRITELN<R>      -- prints 1024
-  2<R, 0>;224~SQRT<144, R>;192~WRITELN<R>        -- prints 12
-  2<R, 0>;224~ABS<-5, R>;192~WRITELN<R>          -- prints 5
+  2<R, 0>;224~SQRT<144, R>;192~WRITELN<R>       -- prints 12
+  2<R, 0>;224~ABS<-5, R>;192~WRITELN<R>         -- prints 5
 
 RULE: DEST in math methods must be declared with opcode 2 before calling the method.
 

@@ -268,19 +268,22 @@ static okin_node_t **parse_body(parser_t *p, int *out_len)
 static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 {
 	okin_node_t *n = alloc_node(p);
-	n->opcode = (uint8_t)fast_atoi(t->start, t->len);
 
+	size_t opcode_len = t->len;
 	if (t->type == TK_LIB_CALL)
 	{
-		n->val_start = t->start;
-		n->val_len   = t->len;
 		const char *tilde = memchr(t->start, '~', t->len);
 		if (tilde)
 		{
+			opcode_len = (size_t)(tilde - t->start);
 			n->method     = tilde + 1;
 			n->method_len = t->len - (size_t)(n->method - t->start);
 		}
+		n->val_start = t->start;
+		n->val_len   = t->len;
 	}
+
+	n->opcode = (uint8_t)fast_atoi(t->start, opcode_len);
 
 	if (!match(p, TK_ARG_OPEN))
 		return n;
