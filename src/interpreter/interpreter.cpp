@@ -27,6 +27,8 @@ void interpreter::init_tables()
 	EXEC_TABLE[DIV]      = &interpreter::exec_arith;
 	EXEC_TABLE[MOD]      = &interpreter::exec_arith;
 	EXEC_TABLE[IF]       = &interpreter::exec_if;
+	EXEC_TABLE[ELIF]     = &interpreter::exec_elif;
+	EXEC_TABLE[ELSE]     = &interpreter::exec_else;
 	EXEC_TABLE[JMP]      = &interpreter::exec_jmp;
 	EXEC_TABLE[JEQ]      = &interpreter::exec_jmp;
 	EXEC_TABLE[JNE]      = &interpreter::exec_jmp;

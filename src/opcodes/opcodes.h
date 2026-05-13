@@ -78,6 +78,8 @@
 
 // branching
 #define IF       0x70  // 0x70: conditional if; "112<COND|<LOGIC>>"
+#define ELIF     0x71  // 0x71: conditional elif (MUST COME AFTER ANOTHER BRANCH); "113<COND|<LOGIC>>"
+#define ELSE     0x72  // 0x72: unconditional else (MUST COME AFTER ANOTHER BRANCH; IF BRANCHES DIRECTLY AFTER IS INVALID); "114<LOGIC>"
 
 // -- JUMPS --
 

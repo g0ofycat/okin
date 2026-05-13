@@ -183,6 +183,7 @@ class interpreter {
 
 		std::unordered_map<std::string_view, const okin_node_t *> functions;
 		std::vector<call_frame_t>                            call_stack;
+		std::vector<int> branch_stack;
 
 		const okin_program_t *program;
 		enviroment           *global_env;
@@ -234,6 +235,8 @@ class interpreter {
 		void exec_aset(const okin_node_t *node, enviroment *env);
 		void exec_arith(const okin_node_t *node, enviroment *env);
 		void exec_if(const okin_node_t *node, enviroment *env);
+		void exec_elif(const okin_node_t *node, enviroment *env);
+		void exec_else(const okin_node_t *node, enviroment *env);
 		void exec_jmp(const okin_node_t *node, enviroment *env);
 		void exec_label(const okin_node_t *node, enviroment *env);
 		void exec_io(const okin_node_t *node, enviroment *env);

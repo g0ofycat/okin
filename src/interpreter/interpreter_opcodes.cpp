@@ -229,11 +229,46 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_if(const okin_node_t *node, enviroment *env)
 {
-	if (val_to_bool(eval(node->args[0], env)))
-	{
+	bool taken = val_to_bool(eval(node->args[0], env));
+	branch_stack.push_back(taken);
+	if (taken) {
 		auto if_env = std::make_unique<enviroment>(env);
-		execute_body(node->body, node->body_len, if_env.get());
+		if (node->body_len > 0)
+			execute_body(node->body, node->body_len, if_env.get());
+		else
+			execute_body(node->args, node->argc, if_env.get());
 	}
+}
+
+/// @brief Conditional elif block
+/// @param node
+/// @param env
+void interpreter::exec_elif(const okin_node_t *node, enviroment *env)
+{
+	if (!branch_stack.back() && val_to_bool(eval(node->args[0], env))) {
+		branch_stack.back() = true;
+		auto elif_env = std::make_unique<enviroment>(env);
+		if (node->body_len > 0)
+			execute_body(node->body, node->body_len, elif_env.get());
+		else
+			execute_body(node->args, node->argc, elif_env.get());
+	}
+}
+
+/// @brief Unconditional else block
+/// @param node
+/// @param env
+void interpreter::exec_else(const okin_node_t *node, enviroment *env)
+{
+	if (!branch_stack.back()) {
+		auto else_env = std::make_unique<enviroment>(env);
+		if (node->body_len > 0)
+			execute_body(node->body, node->body_len, else_env.get());
+		else
+			execute_body(node->args, node->argc, else_env.get());
+	}
+
+	branch_stack.pop_back();
 }
 
 // ======================
