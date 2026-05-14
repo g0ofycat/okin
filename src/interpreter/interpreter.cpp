@@ -38,7 +38,6 @@ void interpreter::init_tables()
 	EXEC_TABLE[IO]       = &interpreter::exec_io;
 	EXEC_TABLE[STRING]   = &interpreter::exec_string;
 	EXEC_TABLE[MATH]     = &interpreter::exec_math;
-
 	EVAL_TABLE[EQ]    = &interpreter::eval_cmp;
 	EVAL_TABLE[NEQ]   = &interpreter::eval_cmp;
 	EVAL_TABLE[GT]    = &interpreter::eval_cmp;
@@ -127,7 +126,7 @@ void enviroment::mark_global(const std::string_view &name)
 
 /// @brief Initalize interpreter from a parsed lexer
 /// @param parser
-interpreter::interpreter(const parser_t *parser) : 
+interpreter::interpreter(const parser_t *parser) :
 	program(parser->program),
 	global_env(new enviroment(nullptr)),
 	ip(0)
