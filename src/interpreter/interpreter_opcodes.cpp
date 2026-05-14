@@ -159,7 +159,7 @@ void interpreter::exec_aget(const okin_node_t *node, enviroment *env)
 void interpreter::exec_aset(const okin_node_t *node, enviroment *env)
 {
 	std::string_view name = tok_name(node->args[0]);
-	okin_val_t *v    = env->get(name);
+	okin_val_t *v         = env->get(name);
 	if (!v || v->type != val_type_t::ARR) runtime_error("ASET requires an array variable");
 	int64_t idx  = std::get<int64_t>(eval(node->args[1], env).data);
 	auto &arr    = *std::get<okin_array_t>(v->data);
@@ -236,7 +236,7 @@ void interpreter::exec_if(const okin_node_t *node, enviroment *env)
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, if_env.get());
 		else
-			execute_body(node->args, node->argc, if_env.get());
+			runtime_error("no conditional body for IF");
 	}
 }
 
@@ -251,7 +251,7 @@ void interpreter::exec_elif(const okin_node_t *node, enviroment *env)
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, elif_env.get());
 		else
-			execute_body(node->args, node->argc, elif_env.get());
+			runtime_error("no conditional body for ELIF");
 	}
 }
 
@@ -509,7 +509,6 @@ okin_val_t interpreter::eval_logical(const okin_node_t *node, enviroment *env)
 	if (node->opcode == NOT)
 		return make_bool(!val_to_bool(eval(node->args[0], env)));
 
-	// short circuit
 	bool a = val_to_bool(eval(node->args[0], env));
 	if (node->opcode == AND && !a) return make_bool(false);
 	if (node->opcode == OR  &&  a) return make_bool(true);
