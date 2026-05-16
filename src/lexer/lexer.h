@@ -27,9 +27,11 @@ typedef enum
 	TK_PIPE,      // |
 	TK_COMMA,     // ,
 	TK_SEMI,      // ;
-	TK_VALUE,     // identifier or raw literal
-	TK_STRING,    // string lit
-	TK_INT,       // int lit
+	TK_VALUE,     // identifier
+	TK_STRING,    // string literal: "..."
+	TK_INT,       // int opcode or raw int
+	TK_INT_LIT,   // int literal: $123
+	TK_FLOAT_LIT, // float literal: @3.14
 	TK_EOF,
 	TK_ERROR
 } token_type_t;

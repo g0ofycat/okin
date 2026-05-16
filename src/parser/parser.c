@@ -347,7 +347,7 @@ static okin_node_t *parse_node(parser_t *p)
 		return NULL;
 	}
 
-	if (t->type == TK_VALUE || t->type == TK_STRING)
+	if (t->type == TK_VALUE || t->type == TK_STRING || t->type == TK_INT_LIT || t->type == TK_FLOAT_LIT)
 	{
 		advance(p);
 		return create_leaf_node(p, t);

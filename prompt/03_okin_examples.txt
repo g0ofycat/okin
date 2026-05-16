@@ -107,6 +107,45 @@ Use opcode 224 (MATH) with a method. Result always goes into a pre-declared DEST
 
 RULE: DEST in math methods must be declared with opcode 2 before calling the method.
 
+2.2: Inlining constants
+
+Okin allows you to inline constants directly in opcodes without pre-declaring variables; although, this isn't shown in the other examples
+
+2.2.1: Integer literals
+Use the $ prefix to inline an integer constant: $N. (NOTE: You don't have to add literals to intergers, although they make the code more explicit)
+  2<X, $42>                          -- X = 42
+  64<$10, $5, RESULT>                -- RESULT = 10 + 5 = 15
+  82<X, $100>                        -- X > 100
+  32<I, $0, $10, $1|192~WRITELN<I>>  -- loop from 0 to 9
+
+2.2.2: Float literals
+Use the @ prefix to inline a floating-point constant: @N.M
+  2<PI, @3.14159>              -- PI = 3.14159
+  66<@2.5, X, RESULT>          -- RESULT = 2.5 * X
+  66<@3.14, @5.0, AREA>        -- AREA = 3.14 * 5.0 = 15.7
+
+2.2.3: String literals
+String literals use quotes and work directly (no prefix needed):
+  2<MSG, "Hello">                    -- MSG = "Hello"
+  208~CONCAT<"prefix", $99, RESULT>  -- can mix strings and literals
+
+2.2.4: Combining literals and variables
+Literals and variables can be freely mixed in any position:
+  64<$100, X, Y>              -- Y = 100 + X
+  64<X, $50, Z>               -- Z = X + 50
+  64<X, Y, Z>                 -- Z = X + Y (both variables)
+
+2.2.5: Literals in conditionals
+  112<80<X, $10>|192~WRITELN<"X equals 10">>       -- if X == 10
+  112<82<$100, X>|192~WRITELN<"100 > X">>          -- if 100 > X
+  112<80<@3.14, Y>|192~WRITELN<"Y is pi">>          -- if Y == 3.14
+
+2.2.6: Literals in loops
+  32<I, $0, $100, $10|192~WRITELN<I>>              -- loop 0, 10, 20, ... 90
+  2<SUM, $0>;32<I, $1, $11, $1|64<SUM, I, SUM>>    -- sum 1 to 10
+
+RULE: Literals work anywhere a variable or opcode argument is expected.
+
 3. Full examples
 
 3.1: Sum 1 to 10

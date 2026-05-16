@@ -167,6 +167,18 @@ okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
 		return { val_type_t::INT, (int64_t)std::stoll(raw) };
 	}
 
+	if (node->tok == TK_INT_LIT)
+	{
+		std::string num_part(node->val_start + 1, node->val_len - 1);
+		return { val_type_t::INT, (int64_t)std::stoll(num_part) };
+	}
+
+	if (node->tok == TK_FLOAT_LIT)
+	{
+		std::string num_part(node->val_start + 1, node->val_len - 1);
+		return { val_type_t::FLOAT, std::stod(num_part) };
+	}
+
 	std::string_view key(node->val_start, node->val_len);
 	okin_val_t *v = env->get(key);
 

@@ -30,6 +30,8 @@ static const char *TOKEN_TYPE_NAMES[] = {
 	"VALUE",
 	"STRING",
 	"INT",
+	"INT_LIT",
+	"FLOAT_LIT",
 	"EOF",
 	"ERROR"
 };
@@ -119,7 +121,7 @@ static void read_string(lexer_t *l, char delim)
 /// @brief Return 1 if c is a valid value character (not a delimiter)
 /// @param c
 /// @return int
-static int is_value_char(int c) { return c && !strchr("<>|,; \t\r\n\"'", c); }
+static int is_value_char(int c) { return c && !strchr("<>|,; \t\r\n\"'@$", c); }
 
 /// @brief Handle single character token
 /// @param l
@@ -176,6 +178,56 @@ static void handle_number_token(lexer_t *l, const char *start, int line, int col
 
 	token_type_t type = (l->depth > 0 && peek(l) != '<') ? TK_INT : TK_OPCODE;
 	push(l, type, start, (l->src + l->pos) - start, line, col);
+}
+
+/// @brief Handle integer literal token ($123)
+/// @param l
+/// @param start
+/// @param line
+/// @param col
+static void handle_int_literal(lexer_t *l, const char *start, int line, int col)
+{
+	advance(l);
+
+	read_while(l, isdigit);
+	push(l, TK_INT_LIT, start, (l->src + l->pos) - start, line, col);
+}
+
+/// @brief Handle float literal token (@3.14)
+/// @param l
+/// @param start
+/// @param line
+/// @param col
+static void handle_float_literal(lexer_t *l, const char *start, int line, int col)
+{
+	advance(l);
+
+	read_while(l, isdigit);
+	if (peek(l) == '.')
+	{
+		advance(l);
+		read_while(l, isdigit);
+	}
+	push(l, TK_FLOAT_LIT, start, (l->src + l->pos) - start, line, col);
+}
+
+/// @brief Try to handle a literal prefix ($, @, etc), return 1 if handled
+/// @param l
+/// @param c Character to check
+/// @param start Start position
+/// @param line Line number
+/// @param col Column number
+/// @return 1 if handled as literal, 0 otherwise
+static int try_handle_literal(lexer_t *l, char c, const char *start, int line, int col)
+{
+	if (!l->src[l->pos + 1] || !isdigit((unsigned char)l->src[l->pos + 1]))
+		return 0;
+
+	switch(c) {
+		case '$': handle_int_literal(l, start, line, col); return 1;
+		case '@': handle_float_literal(l, start, line, col); return 1;
+		default: return 0;
+	}
 }
 
 // ======================
@@ -235,7 +287,12 @@ void lexer_run(lexer_t *l)
 			continue;
 		}
 
-		if (isalpha((unsigned char)c) || c == '_' || c == '$')
+		if (try_handle_literal(l, c, start, line, col))
+		{
+			continue;
+		}
+
+		if (isalpha((unsigned char)c) || c == '_')
 		{
 			size_t len = read_while(l, is_value_char);
 			push(l, TK_VALUE, start, len, line, col);
