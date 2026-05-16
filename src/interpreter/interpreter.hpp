@@ -78,7 +78,9 @@ inline std::string val_to_string(const okin_val_t &v) {
 		case val_type_t::INT:
 			return std::to_string(std::get<int64_t>(v.data));
 		case val_type_t::FLOAT:
-			return std::to_string(std::get<double>(v.data));
+			char buf[64];
+			snprintf(buf, sizeof(buf), "%g", std::get<double>(v.data));
+			return buf;
 		case val_type_t::BOOL:
 			return std::get<bool>(v.data) ? "true" : "false";
 		case val_type_t::STR:
