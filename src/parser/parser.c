@@ -109,7 +109,10 @@ static void process_label(parser_t *p, int index)
 	const token_t *name = peek(p);
 
 	if (name->type != TK_VALUE) return;
-	if (p->program->label_count >= PARSER_MAX_LABELS) return;
+	if (p->program->label_count >= PARSER_MAX_LABELS) {
+		parse_error(p, "too many labels (PARSER_MAX_LABELS)");
+		return;
+	}
 
 	label_entry_t *entry = &p->program->labels[p->program->label_count++];
 	entry->name     = name->start;
@@ -135,7 +138,7 @@ static void collect_labels(parser_t *p)
 		if (t->type == TK_ARG_CLOSE) { depth--; advance(p); continue; }
 		if (t->type == TK_SEMI && depth == 0) { index++; advance(p); continue; }
 
-		if (t->type == TK_OPCODE && depth == 0 && fast_atoi(t->start, t->len == LABEL))
+		if (t->type == TK_OPCODE && depth == 0 && fast_atoi(t->start, t->len) == LABEL)
 		{
 			advance(p);
 			process_label(p, index);
@@ -224,8 +227,8 @@ static okin_node_t **parse_args(parser_t *p, int *out_argc)
 		}
 
 		okin_node_t *node = parse_node(p);
-		if (node)
-			tmp[count++] = node;
+		if (!node) { parse_error(p, "invalid argument"); break; }
+		tmp[count++] = node;
 	}
 
 	*out_argc = count;
@@ -248,6 +251,7 @@ static okin_node_t **parse_body(parser_t *p, int *out_len)
 
 	while (!check(p, TK_ARG_CLOSE) && !check(p, TK_EOF))
 	{
+		if (count >= BODY_MAX_BYTES) { parse_error(p, "body too large"); break; }
 		tmp[count++] = parse_statement(p);
 		match(p, TK_SEMI);
 	}
@@ -419,6 +423,7 @@ void parser_run(parser_t *p)
 	{
 		if (check(p, TK_SEMI)) { advance(p); continue; }
 		if (check(p, TK_ERROR)) { advance(p); continue; }
+		if (count >= PARSER_MAX_NODES) { parse_error(p, "program too large"); break; }
 		tmp[count++] = parse_statement(p);
 		match(p, TK_SEMI);
 	}

@@ -136,14 +136,19 @@ static void handle_single_char_token(lexer_t *l, const char *start, int line, in
 	if ((type == TK_COMMA || type == TK_ARG_CLOSE) && l->count > 0)
 	{
 		token_type_t prev = l->tokens[l->count - 1].type;
-		if (prev == TK_COMMA || prev == TK_ARG_OPEN)
+		if (prev == TK_COMMA || prev == TK_ARG_OPEN) {
 			push_error(l, start, 1);
+			return;
+		}
+	}
+
+	if (type == TK_ARG_OPEN) l->depth++;
+	if (type == TK_ARG_CLOSE) {
+		if (l->depth == 0) { push_error(l, start, 1); return; }
+		l->depth--;
 	}
 
 	push(l, type, start, 1, line, col);
-
-	if (type == TK_ARG_OPEN)  l->depth++;
-	if (type == TK_ARG_CLOSE) l->depth--;
 }
 
 /// @brief Handle numeric token (including lib call)
@@ -157,7 +162,7 @@ static void handle_number_token(lexer_t *l, const char *start, int line, int col
 	read_while(l, isdigit);
 
 	size_t len = (l->src + l->pos) - start;
-	if (fast_atoi(start, len) == 0x90) // label opcode
+	if (l->depth == 0 && fast_atoi(start, len) == 0x90) // label opcode
 		l->has_labels = 1;
 
 	if (peek(l) == '.')

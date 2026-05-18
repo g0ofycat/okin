@@ -144,7 +144,12 @@ Literals and variables can be freely mixed in any position:
   32<I, $0, $100, $10|192~WRITELN<I>>              -- loop 0, 10, 20, ... 90
   2<SUM, $0>;32<I, $1, $11, $1|64<SUM, I, SUM>>    -- sum 1 to 10
 
-RULE: Literals work anywhere a variable or opcode argument is expected.
+2.3: Inlining destinations
+
+Opcodes that write to a DEST variable can instead be used as inline expressions inside a VAR (2) declaration, eliminating the need to pre-declare a destination.
+
+RULE: Inline expression form is only valid as the value argument of opcode 2.
+RULE: The standalone statement form still requires a pre-declared DEST.
 
 3. Full examples
 

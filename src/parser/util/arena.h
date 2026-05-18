@@ -36,7 +36,7 @@ typedef struct
 
 /// @brief Initialize a new arena
 /// @return Heap allocated arena_t
-arena_t *arena_init();
+arena_t *arena_init(void);
 
 /// @brief Allocate size bytes from the arena
 /// @param a Arena instance

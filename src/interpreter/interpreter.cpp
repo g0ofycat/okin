@@ -38,17 +38,26 @@ void interpreter::init_tables()
 	EXEC_TABLE[IO]       = &interpreter::exec_io;
 	EXEC_TABLE[STRING]   = &interpreter::exec_string;
 	EXEC_TABLE[MATH]     = &interpreter::exec_math;
-	EVAL_TABLE[EQ]    = &interpreter::eval_cmp;
-	EVAL_TABLE[NEQ]   = &interpreter::eval_cmp;
-	EVAL_TABLE[GT]    = &interpreter::eval_cmp;
-	EVAL_TABLE[LT]    = &interpreter::eval_cmp;
-	EVAL_TABLE[GTE]   = &interpreter::eval_cmp;
-	EVAL_TABLE[LTE]   = &interpreter::eval_cmp;
-	EVAL_TABLE[AND]   = &interpreter::eval_logical;
-	EVAL_TABLE[OR]    = &interpreter::eval_logical;
-	EVAL_TABLE[NOT]   = &interpreter::eval_logical;
-	EVAL_TABLE[IN]    = &interpreter::eval_in;
-	EVAL_TABLE[ARRAY] = &interpreter::eval_array;
+
+	EVAL_TABLE[EQ]     = &interpreter::eval_cmp;
+	EVAL_TABLE[NEQ]    = &interpreter::eval_cmp;
+	EVAL_TABLE[GT]     = &interpreter::eval_cmp;
+	EVAL_TABLE[LT]     = &interpreter::eval_cmp;
+	EVAL_TABLE[GTE]    = &interpreter::eval_cmp;
+	EVAL_TABLE[LTE]    = &interpreter::eval_cmp;
+	EVAL_TABLE[AND]    = &interpreter::eval_logical;
+	EVAL_TABLE[OR]     = &interpreter::eval_logical;
+	EVAL_TABLE[NOT]    = &interpreter::eval_logical;
+	EVAL_TABLE[IN]     = &interpreter::eval_in;
+	EVAL_TABLE[ARRAY]  = &interpreter::eval_array;
+	EVAL_TABLE[ADD]    = &interpreter::eval_arith;
+	EVAL_TABLE[SUB]    = &interpreter::eval_arith;
+	EVAL_TABLE[MUL]    = &interpreter::eval_arith;
+	EVAL_TABLE[DIV]    = &interpreter::eval_arith;
+	EVAL_TABLE[MOD]    = &interpreter::eval_arith;
+	EVAL_TABLE[IO]     = &interpreter::eval_io;
+	EVAL_TABLE[MATH]   = &interpreter::eval_math;
+	EVAL_TABLE[STRING] = &interpreter::eval_string;
 }
 
 // ======================
@@ -74,30 +83,30 @@ okin_val_t *enviroment::get(const std::string_view &name) {
 /// @param val
 void enviroment::set(const std::string_view &name, const okin_val_t &val)
 {
-	if (globals.count(name))
-	{
-		enviroment *env = this;
-		while (env->parent) env = env->parent;
-		env->vars[name] = val;
-		return;
+	enviroment *e = this;
+	while (e) {
+		if (e->globals.count(name)) {
+			enviroment *root = this;
+			while (root->parent) root = root->parent;
+			root->vars[name] = val;
+			return;
+		}
+		e = e->parent;
 	}
 
 	auto it = vars.find(name);
-	if (it != vars.end())
-	{
+	if (it != vars.end()) {
 		it->second = val;
 		return;
 	}
 
-	if (!parent)
-	{
+	if (!parent) {
 		vars[name] = val;
 		return;
 	}
 
 	okin_val_t *v = parent->get(name);
-	if (v)
-	{
+	if (v) {
 		*v = val;
 		return;
 	}
@@ -157,8 +166,22 @@ okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
 {
 	std::string raw(node->val_start, node->val_len);
 
-	if (node->tok == TK_STRING)
-		return { val_type_t::STR, raw };
+	if (node->tok == TK_STRING) {
+		std::string s;
+		for (size_t i = 0; i < node->val_len; i++) {
+			if (node->val_start[i] == '\\' && i + 1 < node->val_len) {
+				switch (node->val_start[++i]) {
+					case 'n':  s += '\n'; break;
+					case 't':  s += '\t'; break;
+					case '\\': s += '\\'; break;
+					case '"':  s += '"';  break;
+					case '\'': s += '\''; break;
+					default:   s += '\\'; s += node->val_start[i]; break;
+				}
+			} else { s += node->val_start[i]; }
+		}
+		return { val_type_t::STR, std::move(s) };
+	}
 
 	if (node->tok == TK_INT)
 	{
@@ -183,7 +206,6 @@ okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
 	okin_val_t *v = env->get(key);
 
 	if (!v) runtime_error("undefined variable '" + std::string(key) + "'");
-	if (v->type == val_type_t::NIL_VAL) runtime_error("operation on nil");
 
 	return *v;
 }

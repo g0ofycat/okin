@@ -77,18 +77,19 @@ inline std::string val_to_string(const okin_val_t &v) {
 	switch (v.type) {
 		case val_type_t::INT:
 			return std::to_string(std::get<int64_t>(v.data));
-		case val_type_t::FLOAT:
-			char buf[64];
-			snprintf(buf, sizeof(buf), "%g", std::get<double>(v.data));
-			return buf;
+		case val_type_t::FLOAT: {
+									char buf[64];
+									snprintf(buf, sizeof(buf), "%g", std::get<double>(v.data));
+									return buf;
+								}
 		case val_type_t::BOOL:
-			return std::get<bool>(v.data) ? "true" : "false";
+								return std::get<bool>(v.data) ? "true" : "false";
 		case val_type_t::STR:
-			return std::get<std::string>(v.data);
+								return std::get<std::string>(v.data);
 		case val_type_t::ARR:
-			return "[array]";
+								return "[array]";
 		case val_type_t::NIL_VAL:
-			return "nil";
+								return "nil";
 	}
 	return UNK_VAL;
 }
@@ -221,6 +222,12 @@ class interpreter {
 		[[ noreturn ]] void runtime_error(const std::string &msg);
 
 		// ======================
+		// -- UTILITY
+		// ======================
+
+		int64_t expect_int(const okin_val_t &v, const char *ctx);
+
+		// ======================
 		// -- EXEC HANDLERS
 		// ======================
 
@@ -253,6 +260,10 @@ class interpreter {
 		okin_val_t eval_logical(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_array(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_in(const okin_node_t *node, enviroment *env);
+		okin_val_t eval_arith(const okin_node_t *node, enviroment *env);
+		okin_val_t eval_math(const okin_node_t *node, enviroment *env);
+		okin_val_t eval_string(const okin_node_t *node, enviroment *env);
+		okin_val_t eval_io(const okin_node_t *node, enviroment *env);
 
 	public:
 		// ======================

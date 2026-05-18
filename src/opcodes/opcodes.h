@@ -95,12 +95,12 @@
 
 // -- STD LIBS --
 
-#define IO       0xC0  // 0xC0: basic io lib; "192~<METHOD, ...ARGS>"
+#define IO       0xC0  // 0xC0: basic io lib; "192~METHOD<...ARGS>"
 					   //   ~READ<DEST>                   - read input into var
 					   //   ~WRITE<VALUE>                 - write value to stdout
 					   //   ~WRITELN<VALUE>               - write value to stdout with newline
 
-#define STRING   0xD0  // 0xD0: string lib; "208~<METHOD, ...ARGS>"
+#define STRING   0xD0  // 0xD0: string lib; "208~METHOD<...ARGS>"
 					   //   ~LEN<STR, DEST>               - length of string
 					   //   ~CONCAT<A, B, DEST>           - concatenate two strings
 					   //   ~SLICE<STR, START, END, DEST> - substring
@@ -108,7 +108,7 @@
 					   //   ~UPPER<STR, DEST>             - uppercase
 					   //   ~LOWER<STR, DEST>             - lowercase
 
-#define MATH     0xE0  // 0xE0: math lib; "224~<METHOD, ...ARGS>"
+#define MATH     0xE0  // 0xE0: math lib; "224~METHOD<...ARGS>"
 					   //   ~POW<BASE, EXP, DEST>         - exponentiation
 					   //   ~SQRT<A, DEST>                - square root
 					   //   ~ABS<A, DEST>                 - absolute value

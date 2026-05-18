@@ -6,6 +6,9 @@
 // -- PRIVATE
 // ======================
 
+#define ARENA_ALIGN 16
+#define ALIGN_UP(n, a) (((n) + (a) - 1) & ~((a) - 1))
+
 /// @brief Allocate and link a new chunk onto the arena
 /// @param a Arena instance
 static void arena_grow(arena_t *a)
@@ -22,7 +25,7 @@ static void arena_grow(arena_t *a)
 
 /// @brief Initialize a new arena
 /// @return Heap allocated arena_t
-arena_t *arena_init()
+arena_t *arena_init(void)
 {
 	arena_t *a = calloc(1, sizeof(arena_t));
 	arena_grow(a);
@@ -35,11 +38,19 @@ arena_t *arena_init()
 /// @return Pointer to allocated memory
 void *arena_alloc(arena_t *a, size_t size)
 {
-	if (a->head->offset + size > ARENA_CHUNK_SIZE)
-		arena_grow(a);
+	if (size > ARENA_CHUNK_SIZE)
+		return NULL;
 
-	void *ptr = a->head->data + a->head->offset;
-	a->head->offset += size;
+	size_t aligned_offset = ALIGN_UP(a->head->offset, ARENA_ALIGN);
+	if (aligned_offset + size > ARENA_CHUNK_SIZE)
+	{
+		arena_grow(a);
+		aligned_offset = 0;
+	}
+
+	void *ptr = a->head->data + aligned_offset;
+	a->head->offset = aligned_offset + size;
+
 	return ptr;
 }
 
