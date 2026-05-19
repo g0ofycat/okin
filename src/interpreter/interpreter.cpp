@@ -48,8 +48,9 @@ void interpreter::init_tables()
 	EVAL_TABLE[AND]    = &interpreter::eval_logical;
 	EVAL_TABLE[OR]     = &interpreter::eval_logical;
 	EVAL_TABLE[NOT]    = &interpreter::eval_logical;
-	EVAL_TABLE[IN]     = &interpreter::eval_in;
 	EVAL_TABLE[ARRAY]  = &interpreter::eval_array;
+	EVAL_TABLE[IN]     = &interpreter::eval_in;
+	EVAL_TABLE[CALL]   = &interpreter::eval_call;
 	EVAL_TABLE[ADD]    = &interpreter::eval_arith;
 	EVAL_TABLE[SUB]    = &interpreter::eval_arith;
 	EVAL_TABLE[MUL]    = &interpreter::eval_arith;

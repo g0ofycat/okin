@@ -260,6 +260,7 @@ class interpreter {
 		okin_val_t eval_logical(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_array(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_in(const okin_node_t *node, enviroment *env);
+		okin_val_t eval_call(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_arith(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_math(const okin_node_t *node, enviroment *env);
 		okin_val_t eval_string(const okin_node_t *node, enviroment *env);

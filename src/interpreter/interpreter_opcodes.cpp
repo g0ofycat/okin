@@ -568,6 +568,41 @@ okin_val_t interpreter::eval_in(const okin_node_t *node, enviroment *env)
 }
 
 // ======================
+// -- EVAL: CALL
+// ======================
+
+/// @brief Evaluate a function call expression, returning the function's return value
+/// @param node
+/// @param env
+/// @return okin_val_t
+okin_val_t interpreter::eval_call(const okin_node_t *node, enviroment *env)
+{
+	std::string_view name = tok_name(node->args[0]);
+	auto it = functions.find(std::string(name));
+	if (it == functions.end())
+		runtime_error("call to undefined function '" + std::string(name) + "'");
+
+	const okin_node_t *fn = it->second;
+	auto fn_env = std::make_unique<enviroment>(global_env);
+
+	int param_count = fn->argc - 1;
+	int arg_count   = node->argc - 1;
+
+	for (int i = 0; i < param_count && i < arg_count; i++)
+		fn_env->declare(std::string(tok_name(fn->args[i + 1])), eval(node->args[i + 1], env));
+
+	call_stack.push_back({ ip, "", false });
+
+	okin_val_t ret = make_nil();
+	try { execute_body(fn->body, fn->body_len, fn_env.get()); }
+	catch (return_signal &r) { ret = r.value; }
+
+	call_stack.pop_back();
+
+	return ret;
+}
+
+// ======================
 // -- EVAL: ARITHMETIC
 // ======================
 
