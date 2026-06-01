@@ -62,6 +62,7 @@ int scope_resolve(const scope_t *s, const char *name, size_t len)
 /// @param s
 void scope_begin(scope_t *s)
 {
+	if (s->depth >= MAX_SCOPE_DEPTH) return;
 	s->depth++;
 }
 
