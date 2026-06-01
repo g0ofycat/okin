@@ -13,6 +13,7 @@ typedef enum {
 	VM_FLOAT,
 	VM_STR,
 	VM_BOOL,
+
 	VM_ARRAY,
 	VM_NIL,
 } vm_type_t;
@@ -30,10 +31,10 @@ struct vm_array_t {
 struct vm_val_t {
 	vm_type_t type;
 	union {
-		int64_t    i;
-		double     f;
-		char      *s;
-		int        b;
+		int64_t     i;
+		double      f;
+		char       *s;
+		int         b;
 		vm_array_t *arr;
 	};
 };
@@ -42,24 +43,24 @@ struct vm_val_t {
 // -- CREATE VALS
 // ======================
 
-/// @brief Turn a int into a VM value
-/// @param v
+/// @brief Create a VM int value
+/// @param v: Integer value
 /// @return vm_val_t
 vm_val_t vm_val_int   (int64_t v);
 
-/// @brief Turn a double into a VM value
-/// @param v
+/// @brief Create a VM float value
+/// @param v: Float value
 /// @return vm_val_t
 vm_val_t vm_val_float (double v);
 
-/// @brief Turn a bool into a VM value
-/// @param v
+/// @brief Create a VM bool value
+/// @param v: Boolean value {0|1}
 /// @return vm_val_t
 vm_val_t vm_val_bool  (int v);
 
-/// @brief Create a VM string value
-/// @param s
-/// @param len
+/// @brief Create a VM string value, copies the string
+/// @param s: Source string
+/// @param len: Length of source string
 /// @return vm_val_t
 vm_val_t vm_val_str   (const char *s, size_t len);
 
@@ -67,7 +68,7 @@ vm_val_t vm_val_str   (const char *s, size_t len);
 /// @return vm_val_t
 vm_val_t vm_val_nil   (void);
 
-/// @brief Create a VM array object
+/// @brief Create a VM array value
 /// @return vm_val_t
 vm_val_t vm_val_array (void);
 
@@ -76,38 +77,38 @@ vm_val_t vm_val_array (void);
 // ======================
 
 /// @brief Check if a value is truthy
-/// @param v
+/// @param v: Value to check
 /// @return int: {0|1}
 int         vm_val_truthy  (const vm_val_t *v);
 
-/// @brief Turn a VM value to their string type
-/// @param v
-/// @return const char *
+/// @brief Get the type name of a VM value as a string
+/// @param v: Value to inspect
+/// @return const char*
 const char *vm_val_type_str(const vm_val_t *v);
 
-/// @brief Retain a VM value
-/// @param v
+/// @brief Retain a VM value, incrementing ref count for heap types
+/// @param v: Value to retain
 void vm_val_retain (vm_val_t *v);
 
-/// @brief: Release a VM value
-/// @param v
+/// @brief Release a VM value, freeing heap types when ref count hits zero
+/// @param v: Value to release
 void vm_val_release(vm_val_t *v);
 
 // ======================
 // -- ARRAY OPS
 // ======================
 
-/// @brief Initialize a new array object
+/// @brief Initialize a new heap-allocated array object
 /// @return vm_array_t*
 vm_array_t *vm_array_init(void);
 
-/// @breif Push a array object to the heap
-/// @param a
-/// @param v
+/// @brief Push a value onto the array, growing if needed
+/// @param a: Target array
+/// @param v: Value to push
 void        vm_array_push(vm_array_t *a, vm_val_t v);
 
-/// @brief Free a given array
-/// @param a
+/// @brief Free a given array and release all its items
+/// @param a: Array to free
 void        vm_array_free(vm_array_t *a);
 
 #endif

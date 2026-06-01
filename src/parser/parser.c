@@ -267,7 +267,7 @@ static okin_node_t **parse_body(parser_t *p, int *out_len)
 
 /// @brief Parse one full statement given an already-consumed opcode token
 /// @param p
-/// @param t Already consumed opcode or lib call token
+/// @param t: Already consumed opcode or lib call token
 /// @return okin_node_t*
 static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 {
@@ -399,7 +399,7 @@ static void print_node(const okin_node_t *n, int depth)
 // ======================
 
 /// @brief Initialize parser from a lexed token stream
-/// @param lexer Completed lexer instance
+/// @param lexer: Completed lexer instance
 /// @return Heap allocated parser_t
 parser_t *parser_init(const lexer_t *lexer)
 {
@@ -411,7 +411,7 @@ parser_t *parser_init(const lexer_t *lexer)
 }
 
 /// @brief Run both passes, populate program
-/// @param p Parser instance
+/// @param p: Parser instance
 void parser_run(parser_t *p)
 {
 	collect_labels(p);
@@ -434,7 +434,7 @@ void parser_run(parser_t *p)
 }
 
 /// @brief Free parser, arena, and program
-/// @param p Parser instance
+/// @param p: Parser instance
 void parser_free(parser_t *p)
 {
 	arena_free(p->arena);
@@ -443,7 +443,7 @@ void parser_free(parser_t *p)
 }
 
 /// @brief Print all nodes to stdout
-/// @param p Parser instance
+/// @param p: Parser instance
 void parser_print(const parser_t *p)
 {
 	for (int i = 0; i < p->program->len; i++)
