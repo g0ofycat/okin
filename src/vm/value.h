@@ -80,7 +80,7 @@ vm_val_t vm_val_array (void);
 /// @return int: {0|1}
 int         vm_val_truthy  (const vm_val_t *v);
 
-/// @brief Turn a VM value to string type
+/// @brief Turn a VM value to their string type
 /// @param v
 /// @return const char *
 const char *vm_val_type_str(const vm_val_t *v);
@@ -98,7 +98,7 @@ void vm_val_release(vm_val_t *v);
 // ======================
 
 /// @brief Initialize a new array object
-/// @return vm_array_t
+/// @return vm_array_t*
 vm_array_t *vm_array_init(void);
 
 /// @breif Push a array object to the heap

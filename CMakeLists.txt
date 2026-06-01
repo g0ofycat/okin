@@ -28,7 +28,7 @@ if(USE_VM)
 	list(APPEND OKIN_SOURCES
 		src/compiler/compiler.c
 		src/compiler/chunk.c
-		src/compiler/symbol.c
+		src/compiler/scope.c
 		src/vm/vm.c
 		src/vm/value.c
 		src/runtime/env.c
