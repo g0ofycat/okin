@@ -4,7 +4,7 @@
 // -- UTILITY
 // ======================
 
-/// @brief Initalize all opcode logic lookups
+/// @brief Initialize all opcode logic lookups
 void interpreter::init_tables()
 {
 	memset(EXEC_TABLE, 0, sizeof(EXEC_TABLE));
@@ -134,7 +134,7 @@ void enviroment::mark_global(const std::string_view &name)
 // -- interpreter
 // ======================
 
-/// @brief Initalize interpreter from a parsed lexer
+/// @brief Initialize interpreter from a parsed lexer
 /// @param parser
 interpreter::interpreter(const parser_t *parser) :
 	program(parser->program),

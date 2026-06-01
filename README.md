@@ -67,3 +67,11 @@ Variables are dynamically typed. Type is inferred on assignment and can change o
 - Variables inside functions are local by default
 - Outer variables are **readable** from inner scopes
 - Outer variables are only **writable** from inner scopes when explicitly marked with `GLOBAL`
+
+<!--
+## Minimal VM Option
+
+For faster code execution, use the **"-vm"** flag to go from: Walking an AST and then running line by line; to instead compiling the parsed tokens, and then using a VM to execute actual bytecode (not Okin) to make execution much faster.
+
+**Tests (Using [Google Benchmark](https://github.com/google/benchmark)):**
+-->

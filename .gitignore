@@ -2,6 +2,7 @@ build
 
 llm/okin_llm
 llm/gguf
+llm/model/fine_tune_colab.ipynb
 
 .venv
 .cache

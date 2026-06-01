@@ -199,7 +199,7 @@ class interpreter {
 		static exec_fn EXEC_TABLE[TABLE_BYTE_LIMIT];
 		static eval_fn EVAL_TABLE[TABLE_BYTE_LIMIT];
 
-		/// @brief Initalize all opcode logic lookups
+		/// @brief Initialize all opcode logic lookups
 		static void init_tables();
 
 		// ======================
@@ -271,7 +271,7 @@ class interpreter {
 		// -- { CON | DE}STRUCTOR
 		// ======================
 
-		/// @brief Initalize interpreter from a parsed lexer
+		/// @brief Initialize interpreter from a parsed lexer
 		/// @param parser
 		explicit interpreter(const parser_t *parser);
 

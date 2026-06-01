@@ -4,9 +4,11 @@ project(okin LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+option(USE_VM "Enable VM backend" OFF)
+
 find_package(benchmark CONFIG REQUIRED HINTS "/usr/local")
 
-add_library(okin_lib STATIC
+set(OKIN_SOURCES
 	src/lexer/lexer.c
 	src/parser/parser.c
 	src/parser/util/arena.c
@@ -14,13 +16,39 @@ add_library(okin_lib STATIC
 	src/interpreter/interpreter_opcodes.cpp
 )
 
-target_include_directories(okin_lib PUBLIC
+set(OKIN_INCLUDES
 	src/opcodes
 	src/lexer
 	src/parser
 	src/parser/util
 	src/interpreter
 )
+
+if(USE_VM)
+	list(APPEND OKIN_SOURCES
+		src/compiler/compiler.c
+		src/compiler/chunk.c
+		src/compiler/symbol.c
+		src/vm/vm.c
+		src/vm/value.c
+		src/runtime/env.c
+		src/runtime/stdlib.c
+		src/runtime/closure.c
+	)
+
+	list(APPEND OKIN_INCLUDES
+		src/compiler
+		src/vm
+		src/runtime
+	)
+endif()
+
+add_library(okin_lib STATIC ${OKIN_SOURCES})
+target_include_directories(okin_lib PUBLIC ${OKIN_INCLUDES})
+
+if(USE_VM)
+	target_compile_definitions(okin_lib PUBLIC USE_VM)
+endif()
 
 add_executable(okin core/core.cpp)
 target_link_libraries(okin PRIVATE okin_lib)
