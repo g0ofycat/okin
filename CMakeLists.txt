@@ -11,7 +11,7 @@ find_package(benchmark CONFIG REQUIRED HINTS "/usr/local")
 set(OKIN_SOURCES
 	src/lexer/lexer.c
 	src/parser/parser.c
-	src/parser/util/arena.c
+	src/util/arena.c
 	src/interpreter/interpreter.cpp
 	src/interpreter/interpreter_opcodes.cpp
 )
