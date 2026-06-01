@@ -11,6 +11,7 @@
 // ======================
 
 #define MAX_FUNCTIONS 256
+#define MAX_BREAK_PATCHES 64
 
 // ======================
 // -- CLASSES & STRUCTS
@@ -29,8 +30,10 @@ typedef struct {
 	scope_t        *scope;
 	func_entry_t    functions[MAX_FUNCTIONS];
 	int             func_count;
+	int             break_patches[MAX_BREAK_PATCHES];
+	int             break_count;
 
-	int errors;
+	int             errors;
 } compiler_t;
 
 // ======================

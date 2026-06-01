@@ -72,6 +72,7 @@ typedef enum {
 	OP_MATH_CEIL,
 
 	OP_HALT,
+	OP_BREAK,
 } vm_op_t;
 
 #endif
