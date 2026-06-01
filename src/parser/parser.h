@@ -8,7 +8,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
-#include "util/arena.h"
+#include "../util/arena.h"
 #include "../lexer/lexer.h"
 #include "../opcodes/opcodes.h"
 
@@ -77,20 +77,20 @@ typedef struct
 // ======================
 
 /// @brief Initialize parser from a lexed token stream
-/// @param lexer Completed lexer instance
+/// @param lexer: Completed lexer instance
 /// @return Heap allocated parser_t
 parser_t *parser_init(const lexer_t *lexer);
 
 /// @brief Run both passes, populate program
-/// @param p Parser instance
+/// @param p: Parser instance
 void parser_run(parser_t *p);
 
 /// @brief Free parser, arena, and program
-/// @param p Parser instance
+/// @param p: Parser instance
 void parser_free(parser_t *p);
 
 /// @brief Print all nodes to stdout
-/// @param p Parser instance
+/// @param p: Parser instance
 void parser_print(const parser_t *p);
 
 #endif

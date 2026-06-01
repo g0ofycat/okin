@@ -10,7 +10,7 @@
 #define ALIGN_UP(n, a) (((n) + (a) - 1) & ~((a) - 1))
 
 /// @brief Allocate and link a new chunk onto the arena
-/// @param a Arena instance
+/// @param a: Arena instance
 static void arena_grow(arena_t *a)
 {
 	arena_chunk_t *chunk = malloc(sizeof(arena_chunk_t));
@@ -33,8 +33,8 @@ arena_t *arena_init(void)
 }
 
 /// @brief Allocate size bytes from the arena
-/// @param a Arena instance
-/// @param size Bytes to allocate
+/// @param a: Arena instance
+/// @param size: Bytes to allocate
 /// @return Pointer to allocated memory
 void *arena_alloc(arena_t *a, size_t size)
 {
@@ -55,7 +55,7 @@ void *arena_alloc(arena_t *a, size_t size)
 }
 
 /// @brief Free all chunks in the arena
-/// @param a Arena instance
+/// @param a: Arena instance
 void arena_free(arena_t *a)
 {
 	arena_chunk_t *chunk = a->head;

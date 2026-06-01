@@ -20,7 +20,7 @@ set(OKIN_INCLUDES
 	src/opcodes
 	src/lexer
 	src/parser
-	src/parser/util
+	src/util
 	src/interpreter
 )
 

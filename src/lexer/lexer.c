@@ -97,7 +97,7 @@ static size_t read_while(lexer_t *l, int (*pred)(int))
 
 /// @brief Read a quoted string, return span inside quotes
 /// @param l
-/// @param delim Opening delimiter character (' or ")
+/// @param delim: Opening delimiter character (' or ")
 static void read_string(lexer_t *l, char delim)
 {
 	const char *str_start = l->src + l->pos;
@@ -218,10 +218,10 @@ static void handle_float_literal(lexer_t *l, const char *start, int line, int co
 
 /// @brief Try to handle a literal prefix ($, @, etc), return 1 if handled
 /// @param l
-/// @param c Character to check
-/// @param start Start position
-/// @param line Line number
-/// @param col Column number
+/// @param c: Character to check
+/// @param start: Start position
+/// @param line: Line number
+/// @param col: Column number
 /// @return 1 if handled as literal, 0 otherwise
 static int try_handle_literal(lexer_t *l, char c, const char *start, int line, int col)
 {
@@ -240,7 +240,7 @@ static int try_handle_literal(lexer_t *l, char c, const char *start, int line, i
 // ======================
 
 /// @brief Initialize lexer with source string
-/// @param src Source string to lex
+/// @param src: Source string to lex
 /// @return Heap allocated lexer_t
 lexer_t *lexer_init(const char *src)
 {
@@ -254,7 +254,7 @@ lexer_t *lexer_init(const char *src)
 }
 
 /// @brief Run lexer over source, populate token list
-/// @param l Lexer instance
+/// @param l: Lexer instance
 void lexer_run(lexer_t *l)
 {
 	while (peek(l))
@@ -315,7 +315,7 @@ void lexer_run(lexer_t *l)
 }
 
 /// @brief Free lexer and token list
-/// @param l Lexer instance
+/// @param l: Lexer instance
 void lexer_free(lexer_t *l)
 {
 	free(l->tokens);
@@ -323,7 +323,7 @@ void lexer_free(lexer_t *l)
 }
 
 /// @brief Print all tokens to stdout
-/// @param l Lexer instance
+/// @param l: Lexer instance
 void lexer_print(const lexer_t *l)
 {
 	for (size_t i = 0; i < l->count; i++)

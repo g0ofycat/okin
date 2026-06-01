@@ -81,20 +81,20 @@ static inline uint8_t fast_atoi(const char *s, size_t len) {
 }
 
 /// @brief Initialize lexer with source string
-/// @param src Source string to lex
+/// @param src: Source string to lex
 /// @return Heap allocated lexer_t
 lexer_t *lexer_init(const char *src);
 
 /// @brief Run lexer over source, populate token list
-/// @param l Lexer instance
+/// @param l: Lexer instance
 void lexer_run(lexer_t *l);
 
 /// @brief Free lexer and token list
-/// @param l Lexer instance
+/// @param l: Lexer instance
 void lexer_free(lexer_t *l);
 
 /// @brief Print all tokens to stdout
-/// @param l Lexer instance
+/// @param l: Lexer instance
 void lexer_print(const lexer_t *l);
 
 #endif

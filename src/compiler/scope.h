@@ -33,32 +33,32 @@ typedef struct {
 
 /// @brief Initialize a new scope
 /// @return scope_t*
-scope_t *scope_init   (void);
+scope_t *scope_init(void);
 
 /// @brief Free the given scope
 /// @param s
-void     scope_free   (scope_t *s);
+void scope_free(scope_t *s);
 
-/// @brief Declare a new scope
+/// @brief Declare a local variable in the current scope
 /// @param s
 /// @param name
 /// @param len
 /// @return Slot index
 int      scope_declare(scope_t *s, const char *name, size_t len);
 
-/// @brief Resolve any issues in the given scope
+/// @brief Resolve a local variable by name, returns slot or -1 if not found
 /// @param s
 /// @param name
 /// @param len
 /// @return Slot index
 int      scope_resolve(const scope_t *s, const char *name, size_t len);
 
-/// @brief Begin the given scope
+/// @brief Begin a new block scope
 /// @param s
-void     scope_begin  (scope_t *s);
+void scope_begin(scope_t *s);
 
-/// @brief End the given scope
+/// @brief End the current block scope, discarding its locals
 /// @param s
-void     scope_end    (scope_t *s);
+void scope_end(scope_t *s);
 
 #endif
