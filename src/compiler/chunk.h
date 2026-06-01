@@ -25,21 +25,22 @@ typedef struct {
 } instruction_t;
 
 typedef struct chunk_t {
-	instruction_t *code;
-	int           code_len;
-	int           code_cap;
+	instruction_t  *code;
+	vm_val_t       *constants;
+	struct chunk_t **sub_chunks;
+	const char     *name;
 
-	vm_val_t      *constants;
+	int            code_len;
+	int            code_cap;
+
 	int            const_len;
 	int            const_cap;
 
-	struct chunk_t **sub_chunks;
-	int              sub_len;
-	int              sub_cap;
+	int            sub_len;
+	int            sub_cap;
 
-	int              num_locals;
-	int              num_params;
-	const char      *name;
+	int            num_locals;
+	int            num_params;
 } chunk_t;
 
 // ======================
