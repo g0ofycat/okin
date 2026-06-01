@@ -43,15 +43,15 @@ void scope_free(scope_t *s);
 /// @param s
 /// @param name
 /// @param len
-/// @return Slot Index on success, -1 if full
-int scope_declare(scope_t *s, const char *name, size_t len);
+/// @return Slot index
+int      scope_declare(scope_t *s, const char *name, size_t len);
 
 /// @brief Resolve a local variable by name, returns slot or -1 if not found
 /// @param s
 /// @param name
 /// @param len
-/// @return Slot Index, or -1 if not found
-int scope_resolve(const scope_t *s, const char *name, size_t len);
+/// @return Slot index
+int      scope_resolve(const scope_t *s, const char *name, size_t len);
 
 /// @brief Begin a new block scope
 /// @param s

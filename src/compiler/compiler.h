@@ -2,7 +2,6 @@
 #define COMPILER_H
 
 #include "../parser/parser.h"
-#include "../vm/vm.h"
 
 #include "chunk.h"
 #include "scope.h"
@@ -15,7 +14,7 @@ typedef struct {
 	const parser_t *parser;
 	chunk_t        *root;
 	chunk_t        *current_scope;
-	scope_t         scope;
+	scope_t        *scope;
 
 	int errors;
 } compiler_t;
@@ -40,6 +39,6 @@ void compiler_free(compiler_t *c);
 /// @brief Run all chunks in the given compiler
 /// @param c
 /// @return chunk_t*: The root chunk
-chunk_t *compile_chunks(compiler_t *c);
+chunk_t *compiler_chunks(compiler_t *c);
 
 #endif
