@@ -25,7 +25,7 @@ typedef struct {
 } instruction_t;
 
 typedef struct chunk_t {
-	instruction_t code;
+	instruction_t *code;
 	int           code_len;
 	int           code_cap;
 
@@ -51,16 +51,16 @@ typedef struct chunk_t {
 /// @return chunk_t*
 chunk_t *chunk_init(const char *name);
 
-/// @brief Run a given chunk
+/// @brief Emit a given chunk
 /// @param c
 /// @param op
 /// @param a
 /// @return 0 on success, 1 on failure
-int chunk_run(chunk_t *c, vm_op_t op, int32_t a);
+int chunk_emit(chunk_t *c, vm_op_t op, int32_t a);
 
-/// @brief Free the named chunk
-/// @param name
-void chunk_free(const char* name);
+/// @brief Free the given chunk
+/// @param c
+void chunk_free(chunk_t *c);
 
 /// @brief Patch a given chunk
 /// @param c

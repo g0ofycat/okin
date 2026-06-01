@@ -43,14 +43,14 @@ void     scope_free   (scope_t *s);
 /// @param s
 /// @param name
 /// @param len
-/// @return 0 on success, 1 on failure
+/// @return Slot index
 int      scope_declare(scope_t *s, const char *name, size_t len);
 
 /// @brief Resolve any issues in the given scope
 /// @param s
 /// @param name
 /// @param len
-/// @return 0 on success, 1 on failure
+/// @return Slot index
 int      scope_resolve(const scope_t *s, const char *name, size_t len);
 
 /// @brief Begin the given scope
