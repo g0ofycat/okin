@@ -95,27 +95,20 @@ static void compile_leaf(compiler_t *c, const okin_node_t *node)
 	if (node->tok == TK_VALUE) { load_name(c, node->val_start, node->val_len); return; }
 
 	char buf[32];
-	size_t len = (node->val_len - 1) < 31 ? (node->val_len - 1) : 31;
-	memcpy(buf, node->val_start + 1, len); buf[len] = '\0';
-
 	vm_val_t val;
 
-	switch (node->tok) {
-		case TK_STRING:
-			val = vm_val_str(node->val_start, node->val_len);
-			break;
-		case TK_INT:
-			val = memchr(buf, '.', len) ? vm_val_float(atof(buf)) : vm_val_int(atoll(buf));
-			break;
-		case TK_INT_LIT:
-			val = vm_val_int(atoll(buf));
-			break;
-		case TK_FLOAT_LIT:
-			val = vm_val_float(atof(buf));
-			break;
-		default:
-			val = vm_val_nil();
-			break;
+	if (node->tok == TK_INT_LIT || node->tok == TK_FLOAT_LIT) {
+		size_t len = (node->val_len - 1) < 31 ? (node->val_len - 1) : 31;
+		memcpy(buf, node->val_start + 1, len); buf[len] = '\0';
+		val = node->tok == TK_INT_LIT ? vm_val_int(atoll(buf)) : vm_val_float(atof(buf));
+	} else if (node->tok == TK_INT) {
+		size_t len = node->val_len < 31 ? node->val_len : 31;
+		memcpy(buf, node->val_start, len); buf[len] = '\0';
+		val = memchr(buf, '.', len) ? vm_val_float(atof(buf)) : vm_val_int(atoll(buf));
+	} else if (node->tok == TK_STRING) {
+		val = vm_val_str(node->val_start, node->val_len);
+	} else {
+		val = vm_val_nil();
 	}
 
 	chunk_emit(c->current_scope, OP_LOAD_CONST, chunk_add_const(c->current_scope, val));
