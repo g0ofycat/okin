@@ -244,7 +244,6 @@ static void compile_if(compiler_t *c, const okin_node_t *node)
 	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
 	scope_begin(c->scope);
 	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
-
 	scope_end(c->scope);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
 }
@@ -330,10 +329,8 @@ static void compile_for(compiler_t *c, const okin_node_t *node)
 /// @param node: Jump node
 static void compile_jmp(compiler_t *c, const okin_node_t *node)
 {
-
 	if (node->opcode == JMP) {
 		chunk_emit(c->current_scope, OP_JMP, node->args[0]->jump_index);
-
 		return;
 	}
 	compile_node(c, node->args[0]);
@@ -398,7 +395,6 @@ static void compile_function(compiler_t *c, const okin_node_t *node)
 static void compile_call(compiler_t *c, const okin_node_t *node)
 {
 	int arg_count = node->argc - 2;
-
 	if (arg_count < 0) arg_count = 0;
 
 	for (int i = 1; i <= arg_count; i++) compile_node(c, node->args[i]);
@@ -485,7 +481,6 @@ static void compile_io(compiler_t *c, const okin_node_t *node)
 	} else compiler_error(c, "unknown IO method");
 }
 
-
 /// @brief Compile a STRING lib call
 /// @param c: Compiler instance
 /// @param node: STRING node
@@ -507,7 +502,6 @@ static void compile_string(compiler_t *c, const okin_node_t *node)
 		store_name(c, node->args[node->argc - 1]->val_start, node->args[node->argc - 1]->val_len);
 }
 
-
 /// @brief Compile a MATH lib call
 /// @param c: Compiler instance
 /// @param node: MATH node
@@ -527,7 +521,6 @@ static void compile_math(compiler_t *c, const okin_node_t *node)
 	else { compiler_error(c, "unknown MATH method"); return; }
 	chunk_emit(c->current_scope, op, 0);
 	if (node->args[node->argc - 1]->tok == TK_VALUE)
-
 		store_name(c, node->args[node->argc - 1]->val_start, node->args[node->argc - 1]->val_len);
 }
 
