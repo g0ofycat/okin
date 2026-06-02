@@ -171,7 +171,6 @@ static void compile_arith(compiler_t *c, const okin_node_t *node)
 		case SUB: chunk_emit(c->current_scope, OP_SUB, 0); break;
 		case MUL: chunk_emit(c->current_scope, OP_MUL, 0); break;
 		case DIV: chunk_emit(c->current_scope, OP_DIV, 0); break;
-
 		case MOD: chunk_emit(c->current_scope, OP_MOD, 0); break;
 	}
 	if (node->argc >= 3 && node->args[2]->tok == TK_VALUE)
@@ -187,7 +186,6 @@ static void compile_arith(compiler_t *c, const okin_node_t *node)
 /// @param node: Cmp node - args: A, B
 static void compile_cmp(compiler_t *c, const okin_node_t *node)
 {
-
 	compile_node(c, node->args[0]);
 	compile_node(c, node->args[1]);
 	switch (node->opcode) {
@@ -215,7 +213,6 @@ static void compile_logical(compiler_t *c, const okin_node_t *node)
 		return;
 	}
 	compile_node(c, node->args[0]);
-
 	compile_node(c, node->args[1]);
 	switch (node->opcode) {
 		case AND: chunk_emit(c->current_scope, OP_AND, 0); break;
@@ -464,9 +461,7 @@ static void compile_io(compiler_t *c, const okin_node_t *node)
 		compile_node(c, node->args[0]);
 		chunk_emit(c->current_scope, OP_IO_WRITELN, 0);
 	} else if (memcmp(node->method, "WRITE", node->method_len) == 0) {
-
 		compile_node(c, node->args[0]);
-
 		chunk_emit(c->current_scope, OP_IO_WRITE, 0);
 	} else if (memcmp(node->method, "READ", node->method_len) == 0) {
 		chunk_emit(c->current_scope, OP_IO_READ,
@@ -512,6 +507,7 @@ static void compile_math(compiler_t *c, const okin_node_t *node)
 	else if (memcmp(node->method, "FLOOR", node->method_len) == 0) op = OP_MATH_FLOOR;
 	else if (memcmp(node->method, "CEIL",  node->method_len) == 0) op = OP_MATH_CEIL;
 	else { compiler_error(c, "unknown MATH method"); return; }
+
 	chunk_emit(c->current_scope, op, 0);
 	if (node->args[node->argc - 1]->tok == TK_VALUE)
 		store_name(c, node->args[node->argc - 1]->val_start, node->args[node->argc - 1]->val_len);
@@ -602,7 +598,6 @@ compiler_t *compiler_init(const parser_t *parser)
 	c->parser      = parser;
 	c->root        = chunk_init("__main__");
 	c->current_scope = c->root;
-
 	c->scope       = scope_init();
 	return c;
 }
