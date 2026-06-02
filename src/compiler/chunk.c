@@ -98,7 +98,6 @@ int chunk_add_sub(chunk_t *c, chunk_t *sub)
 /// @param v
 static void vm_val_print(vm_val_t v) {
 	if (v.type == VM_INT)        printf("%lld", (long long)v.i);
-
 	else if (v.type == VM_FLOAT) printf("%f", v.f);
 	else if (v.type == VM_STR)   printf("\"%s\"", v.s ? v.s : "");
 	else if (v.type == VM_BOOL)  printf("%s", v.b ? "true" : "false");
@@ -121,7 +120,6 @@ void chunk_print(const chunk_t *chunk) {
 		printf("\n- CONSTANTS\n");
 		for (int i = 0; i < chunk->const_len; i++) {
 			printf("%04d | ", i);
-
 			vm_val_print(chunk->constants[i]);
 			printf("\n");
 		}
