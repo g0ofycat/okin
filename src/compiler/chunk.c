@@ -70,7 +70,6 @@ int chunk_add_const(chunk_t *c, vm_val_t val)
 	if (c->const_len == c->const_cap) {
 		c->const_cap *= 2;
 		c->constants  = realloc(c->constants, sizeof(vm_val_t) * c->const_cap);
-
 	}
 	c->constants[c->const_len] = val;
 	return c->const_len++;
