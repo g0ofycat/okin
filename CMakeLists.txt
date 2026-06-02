@@ -31,15 +31,11 @@ if(USE_VM)
 		src/compiler/scope.c
 		src/vm/vm.c
 		src/vm/value.c
-		src/runtime/env.c
-		src/runtime/okin_stdlib.c
-		src/runtime/closure.c
 	)
 
 	list(APPEND OKIN_INCLUDES
 		src/compiler
 		src/vm
-		src/runtime
 	)
 endif()
 
