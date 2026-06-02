@@ -85,6 +85,10 @@ int chunk_add_const(chunk_t *c, vm_val_t val);
 /// @return int: Sub-chunk index
 int chunk_add_sub(chunk_t *c, chunk_t *sub);
 
+/// @brief Print chunk data recursively to stdout
+/// @param chunk
+void chunk_print(const chunk_t *chunk);
+
 #endif
 
 #ifdef __cplusplus

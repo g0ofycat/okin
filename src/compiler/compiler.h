@@ -57,11 +57,6 @@ void compiler_run(compiler_t *c);
 /// @param c
 void compiler_free(compiler_t *c);
 
-/// @brief Return the root chunk after compilation
-/// @param c
-/// @return chunk_t*
-chunk_t *compiler_chunks(compiler_t *c);
-
 #endif
 
 #ifdef __cplusplus

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "chunk.h"
@@ -87,4 +88,50 @@ int chunk_add_sub(chunk_t *c, chunk_t *sub)
 	}
 	c->sub_chunks[c->sub_len] = sub;
 	return c->sub_len++;
+}
+
+// ======================
+// -- DEBUG
+// ======================
+
+/// @brief Print VM value
+/// @param v
+static void vm_val_print(vm_val_t v) {
+	if (v.type == VM_INT)        printf("%lld", (long long)v.i);
+
+	else if (v.type == VM_FLOAT) printf("%f", v.f);
+	else if (v.type == VM_STR)   printf("\"%s\"", v.s ? v.s : "");
+	else if (v.type == VM_BOOL)  printf("%s", v.b ? "true" : "false");
+	else if (v.type == VM_ARRAY) printf("[array]");
+	else                         printf("nil");
+}
+
+/// @brief Print chunk data recursively to stdout
+/// @param chunk
+void chunk_print(const chunk_t *chunk) {
+	printf("\n<CHUNK: '%s'>\n", chunk->name);
+
+	printf("- CODE\n");
+	for (int i = 0; i < chunk->code_len; i++) {
+		const instruction_t *inst = &chunk->code[i];
+		printf("%04d | %d %d\n", i, inst->op, inst->a);
+	}
+
+	if (chunk->const_len > 0) {
+		printf("\n- CONSTANTS\n");
+		for (int i = 0; i < chunk->const_len; i++) {
+			printf("%04d | ", i);
+
+			vm_val_print(chunk->constants[i]);
+			printf("\n");
+		}
+	}
+
+	if (chunk->sub_len > 0) {
+		for (int i = 0; i < chunk->sub_len; i++) {
+			chunk_print(chunk->sub_chunks[i]);
+		}
+	}
+
+	printf("<END>\n");
 }

@@ -619,11 +619,3 @@ void compiler_free(compiler_t *c)
 	scope_free(c->scope);
 	free(c);
 }
-
-/// @brief Return the root chunk after compilation
-/// @param c
-/// @return chunk_t*
-chunk_t *compiler_chunk(compiler_t *c)
-{
-	return c->root;
-}

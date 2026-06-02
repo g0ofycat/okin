@@ -13,6 +13,8 @@
 #define POP()    (vm->stack[--vm->stack_top])
 #define PEEK()   (vm->stack[vm->stack_top - 1])
 
+#define CURRENT_FRAME() (&vm->frames[vm->frame_count - 1])
+
 // ======================
 // -- UTILITY
 // ======================
@@ -62,6 +64,24 @@ static void vm_set_global(vm_t *vm, const char *key, size_t len, vm_val_t val)
 }
 
 // ======================
+// -- OPCODE IMPLS
+// ======================
+
+
+// ======================
+// -- DISPATCH
+// ======================
+
+typedef void (*vm_fn)(vm_t *, const instruction_t *);
+static vm_fn VM_TABLE[256];
+
+/// @brief Initialize the VM dispatch table
+static void init_vm_table(void)
+{
+	memset(VM_TABLE, 0, sizeof(VM_TABLE));
+}
+
+// ======================
 // -- VM
 // ======================
 
@@ -70,9 +90,19 @@ static void vm_set_global(vm_t *vm, const char *key, size_t len, vm_val_t val)
 /// @return vm_t*
 vm_t *vm_init(chunk_t *root)
 {
-	vm_t *vm  = calloc(1, sizeof(vm_t));
+	static int initialized = 0;
+	if (!initialized) { init_vm_table(); initialized = 1; }
+
+	vm_t *vm = calloc(1, sizeof(vm_t));
+
+	vm_call_frame_t *frame = &vm->frames[vm->frame_count++];
+	frame->chunk = root;
+	frame->return_ip = 0;
+	frame->stack_base = 0;
+
 	vm->chunk = root;
-	vm->ip    = 0;
+	vm->ip = 0;
+
 	return vm;
 }
 
@@ -80,12 +110,27 @@ vm_t *vm_init(chunk_t *root)
 /// @param vm: VM instance
 void vm_run(vm_t *vm)
 {
-	vm_execute(vm);
+	while (vm->ip < vm->chunk->code_len) {
+		instruction_t *inst = &vm->chunk->code[vm->ip++];
+		vm_fn handler = VM_TABLE[inst->op];
+		if (handler) {
+			handler(vm, inst);
+		} else {
+			fprintf(stderr, "Unhandled opcode: %d\n", inst->op);
+			exit(1);
+		}
+	}
 }
 
 /// @brief Free the VM
 /// @param vm: VM instance
 void vm_free(vm_t *vm)
 {
+	for (int i = 0; i < vm->stack_top; i++) {
+		vm_val_release(&vm->stack[i]);
+	}
+	for (int i = 0; i < vm->global_count; i++) {
+		vm_val_release(&vm->globals[i].val);
+	}
 	free(vm);
 }
