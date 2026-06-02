@@ -52,7 +52,7 @@ struct return_signal { okin_val_t value; };
 // -- CALL FRAME
 // ======================
 
-struct call_frame_t
+struct interpreter_call_frame_t
 {
 	int         return_ip;
 	std::string_view dest;
@@ -185,7 +185,7 @@ class interpreter {
 		// ======================
 
 		std::unordered_map<std::string_view, const okin_node_t *> functions;
-		std::vector<call_frame_t>                            call_stack;
+		std::vector<interpreter_call_frame_t>                            call_stack;
 		std::vector<int> branch_stack;
 
 		const okin_program_t *program;

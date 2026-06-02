@@ -87,7 +87,7 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 	try { execute_body(fn->body, fn->body_len, fn_env.get()); }
 	catch (return_signal &r) { ret = r.value; }
 
-	call_frame_t frame = call_stack.back();
+	interpreter_call_frame_t frame = call_stack.back();
 	call_stack.pop_back();
 	ip = frame.return_ip;
 

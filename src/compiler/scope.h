@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef SCOPE_H
 #define SCOPE_H
 
@@ -61,4 +65,8 @@ void scope_begin(scope_t *s);
 /// @param s
 void scope_end(scope_t *s);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

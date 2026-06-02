@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef VM_H
 #define VM_H
 
@@ -23,7 +27,7 @@ typedef struct {
 	chunk_t *chunk;
 	int      return_ip;
 	int      stack_base;
-} call_frame_t;
+} vm_call_frame_t;
 
 typedef struct {
 
@@ -37,7 +41,7 @@ typedef struct {
 
 	int            stack_top;
 
-	call_frame_t   frames[VM_CALL_STACK_MAX];
+	vm_call_frame_t   frames[VM_CALL_STACK_MAX];
 	int            frame_count;
 
 	global_entry_t globals[VM_GLOBALS_CAP];
@@ -64,4 +68,8 @@ void  vm_run(vm_t *vm);
 /// @param vm: The VM instance
 void  vm_free(vm_t *vm);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

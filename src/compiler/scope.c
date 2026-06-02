@@ -1,7 +1,7 @@
-#include "scope.h"
-
 #include <stdlib.h>
 #include <string.h>
+
+#include "scope.h"
 
 // ======================
 // -- SCOPE

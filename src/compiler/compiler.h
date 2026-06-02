@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef COMPILER_H
 #define COMPILER_H
 
@@ -53,9 +57,13 @@ void compiler_run(compiler_t *c);
 /// @param c
 void compiler_free(compiler_t *c);
 
-/// @brief Run all chunks in the given compiler
+/// @brief Return the root chunk after compilation
 /// @param c
-/// @return chunk_t*: The root chunk
+/// @return chunk_t*
 chunk_t *compiler_chunks(compiler_t *c);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

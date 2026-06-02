@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef CHUNK_H
 #define CHUNK_H
 
@@ -81,4 +85,8 @@ int chunk_add_const(chunk_t *c, vm_val_t val);
 /// @return int: Sub-chunk index
 int chunk_add_sub(chunk_t *c, chunk_t *sub);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

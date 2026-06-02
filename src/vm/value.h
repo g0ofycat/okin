@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef VM_VALUE_H
 #define VM_VALUE_H
 
@@ -111,4 +115,8 @@ void        vm_array_push(vm_array_t *a, vm_val_t v);
 /// @param a: Array to free
 void        vm_array_free(vm_array_t *a);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

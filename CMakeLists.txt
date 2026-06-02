@@ -32,7 +32,7 @@ if(USE_VM)
 		src/vm/vm.c
 		src/vm/value.c
 		src/runtime/env.c
-		src/runtime/stdlib.c
+		src/runtime/okin_stdlib.c
 		src/runtime/closure.c
 	)
 
