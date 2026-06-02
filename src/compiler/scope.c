@@ -54,7 +54,6 @@ int scope_resolve(const scope_t *s, const char *name, size_t len)
 		if (l->name_len == len && memcmp(l->name, name, len) == 0)
 			return l->slot;
 	}
-
 	return -1;
 }
 
@@ -72,6 +71,5 @@ void scope_end(scope_t *s)
 {
 	while (s->local_count > 0 && s->locals[s->local_count - 1].depth == s->depth)
 		s->local_count--;
-
 	s->depth--;
 }

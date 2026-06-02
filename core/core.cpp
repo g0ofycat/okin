@@ -88,8 +88,10 @@ int main(int argc, char** argv) {
 
 	lexer_t* lex = lexer_init(src);
 	lexer_run(lex);
+	lexer_print(lex);
 	parser_t* parse = parser_init(lex);
 	parser_run(parse);
+	parser_print(parse);
 
 #ifdef USE_VM
 	if (use_vm) {

@@ -92,7 +92,7 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 	ip = frame.return_ip;
 
 	if (frame.has_dest)
-		env->declare(frame.dest, ret);
+		env->set(frame.dest, ret);
 }
 
 /// @brief Return a value from a function
@@ -168,7 +168,7 @@ void interpreter::exec_aget(const okin_node_t *node, enviroment *env)
 	int64_t idx     = expect_int(eval(node->args[1], env), "AGET index");
 	const auto &arr = *std::get<okin_array_t>(arr_v.data);
 	if (idx < 0 || idx >= (int64_t)arr.size()) runtime_error("AGET index out of bounds");
-	env->declare(std::string(tok_name(node->args[2])), arr[idx]);
+	env->set(std::string(tok_name(node->args[2])), arr[idx]);
 }
 
 /// @brief Set value at array index
@@ -203,7 +203,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 
 	if (node->opcode == ADD && a.type == val_type_t::STR)
 	{
-		env->declare(dest, make_string(val_to_string(a) + val_to_string(b)));
+		env->set(dest, make_string(val_to_string(a) + val_to_string(b)));
 		return;
 	}
 
@@ -219,7 +219,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 			case DIV: if (bf == 0.0) runtime_error("division by zero"); r = af / bf; break;
 			case MOD: r = std::fmod(af, bf); break;
 		}
-		env->declare(dest, make_float(r));
+		env->set(dest, make_float(r));
 	}
 	else
 	{
@@ -234,7 +234,7 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 			case DIV: if (bi == 0) runtime_error("division by zero"); r = ai / bi; break;
 			case MOD: if (bi == 0) runtime_error("modulo by zero");   r = ai % bi; break;
 		}
-		env->declare(dest, make_int(r));
+		env->set(dest, make_int(r));
 	}
 }
 
@@ -366,13 +366,13 @@ void interpreter::exec_string(const okin_node_t *node, enviroment *env)
 	if (method == "LEN")
 	{
 		std::string s = val_to_string(eval(node->args[0], env));
-		env->declare(tok_name(node->args[1]), make_int((int64_t)s.size()));
+		env->set(tok_name(node->args[1]), make_int((int64_t)s.size()));
 	}
 	else if (method == "CONCAT")
 	{
 		std::string a = val_to_string(eval(node->args[0], env));
 		std::string b = val_to_string(eval(node->args[1], env));
-		env->declare(tok_name(node->args[2]), make_string(a + b));
+		env->set(tok_name(node->args[2]), make_string(a + b));
 	}
 	else if (method == "SLICE")
 	{
@@ -381,26 +381,27 @@ void interpreter::exec_string(const okin_node_t *node, enviroment *env)
 		int64_t end   = expect_int(eval(node->args[2], env), "SLICE end");
 		if (start < 0 || end > (int64_t)s.size() || start > end)
 			runtime_error("STRING SLICE index out of bounds");
-		env->declare(tok_name(node->args[3]), make_string(s.substr(start, end - start)));
+		env->set(tok_name(node->args[3]), make_string(s.substr(start, end - start)));
 	}
 	else if (method == "FIND")
 	{
 		std::string s       = val_to_string(eval(node->args[0], env));
 		std::string pattern = val_to_string(eval(node->args[1], env));
 		size_t pos          = s.find(pattern);
-		env->declare(tok_name(node->args[2]), make_int(pos == std::string::npos ? -1 : (int64_t)pos));
+		env->set(tok_name(node->args[2]), make_int(pos == std::string::npos ? -1 : (int64_t)pos));
 	}
 	else if (method == "UPPER")
 	{
 		std::string s = val_to_string(eval(node->args[0], env));
 		std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-		env->declare(tok_name(node->args[1]), make_string(s));
+		env->set(tok_name(node->args[1]), make_string(s));
 	}
 	else if (method == "LOWER")
 	{
 		std::string s = val_to_string(eval(node->args[0], env));
 		std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-		env->declare(tok_name(node->args[1]), make_string(s));
+		env->set(tok_name(node->args[1]), make_string(s));
+
 	}
 	else runtime_error("unknown STRING method '" + std::string(method) + "'");
 }
@@ -420,13 +421,13 @@ void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 	{
 		double base = to_double(eval(node->args[0], env));
 		double exp  = to_double(eval(node->args[1], env));
-		env->declare(tok_name(node->args[2]), make_float(std::pow(base, exp)));
+		env->set(tok_name(node->args[2]), make_float(std::pow(base, exp)));
 	}
 	else if (method == "SQRT")
 	{
 		double a = to_double(eval(node->args[0], env));
 		if (a < 0.0) runtime_error("SQRT of negative number");
-		env->declare(tok_name(node->args[1]), make_float(std::sqrt(a)));
+		env->set(tok_name(node->args[1]), make_float(std::sqrt(a)));
 	}
 	else if (method == "ABS")
 	{
@@ -434,7 +435,7 @@ void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 		okin_val_t result = (a.type == val_type_t::FLOAT)
 			? make_float(std::abs(to_double(a)))
 			: make_int(std::abs(std::get<int64_t>(a.data)));
-		env->declare(tok_name(node->args[1]), result);
+		env->set(tok_name(node->args[1]), result);
 	}
 	else if (method == "MIN")
 	{
@@ -444,7 +445,7 @@ void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 		okin_val_t result = use_float
 			? make_float(std::min(to_double(a), to_double(b)))
 			: make_int(std::min(std::get<int64_t>(a.data), std::get<int64_t>(b.data)));
-		env->declare(tok_name(node->args[2]), result);
+		env->set(tok_name(node->args[2]), result);
 	}
 	else if (method == "MAX")
 	{
@@ -454,17 +455,17 @@ void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 		okin_val_t result = use_float
 			? make_float(std::max(to_double(a), to_double(b)))
 			: make_int(std::max(std::get<int64_t>(a.data), std::get<int64_t>(b.data)));
-		env->declare(tok_name(node->args[2]), result);
+		env->set(tok_name(node->args[2]), result);
 	}
 	else if (method == "FLOOR")
 	{
 		double a = to_double(eval(node->args[0], env));
-		env->declare(tok_name(node->args[1]), make_int((int64_t)std::floor(a)));
+		env->set(tok_name(node->args[1]), make_int((int64_t)std::floor(a)));
 	}
 	else if (method == "CEIL")
 	{
 		double a = to_double(eval(node->args[0], env));
-		env->declare(tok_name(node->args[1]), make_int((int64_t)std::ceil(a)));
+		env->set(tok_name(node->args[1]), make_int((int64_t)std::ceil(a)));
 	}
 	else runtime_error("unknown MATH method '" + std::string(method) + "'");
 }

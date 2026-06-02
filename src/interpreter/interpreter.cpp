@@ -84,32 +84,20 @@ okin_val_t *enviroment::get(const std::string_view &name) {
 /// @param val
 void enviroment::set(const std::string_view &name, const okin_val_t &val)
 {
-	enviroment *e = this;
-	while (e) {
-		if (e->globals.count(name)) {
-			enviroment *root = this;
-			while (root->parent) root = root->parent;
-			root->vars[name] = val;
-			return;
-		}
-		e = e->parent;
-	}
-
 	auto it = vars.find(name);
-	if (it != vars.end()) {
+	if (it != vars.end())
+	{
 		it->second = val;
 		return;
 	}
 
-	if (!parent) {
-		vars[name] = val;
-		return;
-	}
-
-	okin_val_t *v = parent->get(name);
-	if (v) {
-		*v = val;
-		return;
+	if (parent)
+	{
+		if (parent->get(name))
+		{
+			parent->set(name, val);
+			return;
+		}
 	}
 
 	vars[name] = val;

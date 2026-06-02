@@ -116,8 +116,9 @@ void vm_run(vm_t *vm)
 		if (handler) {
 			handler(vm, inst);
 		} else {
-			fprintf(stderr, "Unhandled opcode: %d\n", inst->op);
-			exit(1);
+			char buf[64];
+			snprintf(buf, sizeof(buf), "Unhandled opcode: %d", inst->op);
+			vm_error(buf);
 		}
 	}
 }
