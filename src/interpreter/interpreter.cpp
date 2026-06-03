@@ -91,13 +91,10 @@ void enviroment::set(const std::string_view &name, const okin_val_t &val)
 		return;
 	}
 
-	if (parent)
+	if (parent && parent->get(name))
 	{
-		if (parent->get(name))
-		{
-			parent->set(name, val);
-			return;
-		}
+		parent->set(name, val);
+		return;
 	}
 
 	vars[name] = val;
