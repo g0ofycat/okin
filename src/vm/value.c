@@ -49,10 +49,13 @@ vm_val_t vm_val_bool(int v)
 vm_val_t vm_val_str(const char *s, size_t len)
 {
 	vm_val_t val;
-	val.type    = VM_STR;
-	val.s       = malloc(len + 1);
-	memcpy(val.s, s, len);
-	val.s[len]  = '\0';
+	val.type      = VM_STR;
+	val.str       = malloc(sizeof(vm_str_t));
+	val.str->data = malloc(len + 1);
+	memcpy(val.str->data, s, len);
+	val.str->data[len] = '\0';
+	val.str->len  = len;
+	val.str->refs = 1;
 	return val;
 }
 
@@ -89,7 +92,7 @@ int vm_val_truthy(const vm_val_t *v)
 		case VM_INT:   return v->i != 0;
 		case VM_FLOAT: return v->f != 0.0;
 		case VM_BOOL:  return v->b;
-		case VM_STR:   return v->s && v->s[0] != '\0';
+		case VM_STR:   return v->str && v->str->data && v->str->data[0] != '\0';
 		case VM_ARRAY: return v->arr && v->arr->len > 0;
 		case VM_NIL:   return 0;
 	}
@@ -116,8 +119,8 @@ const char *vm_val_type_str(const vm_val_t *v)
 /// @param v
 void vm_val_retain(vm_val_t *v)
 {
-	if (v->type == VM_STR && v->s)
-		return;
+	if (v->type == VM_STR && v->str)
+		v->str->refs++;
 	if (v->type == VM_ARRAY && v->arr)
 		v->arr->refs++;
 }
@@ -126,9 +129,13 @@ void vm_val_retain(vm_val_t *v)
 /// @param v
 void vm_val_release(vm_val_t *v)
 {
-	if (v->type == VM_STR) {
-		free(v->s);
-		v->s = NULL;
+	if (v->type == VM_STR && v->str) {
+		v->str->refs--;
+		if (v->str->refs <= 0) {
+			free(v->str->data);
+			free(v->str);
+		}
+		v->str = NULL;
 		return;
 	}
 	if (v->type == VM_ARRAY && v->arr) {

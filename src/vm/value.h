@@ -25,6 +25,12 @@ typedef enum {
 typedef struct vm_val_t   vm_val_t;
 typedef struct vm_array_t vm_array_t;
 
+typedef struct {
+	char   *data;
+	size_t  len;
+	int     refs;
+} vm_str_t;
+
 struct vm_array_t {
 	vm_val_t *items;
 	int       len;
@@ -39,6 +45,7 @@ struct vm_val_t {
 		double      f;
 		char       *s;
 		int         b;
+		vm_str_t   *str;
 		vm_array_t *arr;
 	};
 };

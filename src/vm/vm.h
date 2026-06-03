@@ -18,6 +18,7 @@ extern "C" {
 #define VM_STACK_MAX      4096
 #define VM_CALL_STACK_MAX 256
 #define VM_GLOBALS_CAP    256
+#define VM_LOCALS_CAP 256
 
 // ======================
 // -- STRUCTS
@@ -27,6 +28,7 @@ typedef struct {
 	chunk_t *chunk;
 	int      return_ip;
 	int      stack_base;
+	vm_val_t locals[VM_LOCALS_CAP];
 } vm_call_frame_t;
 
 typedef struct {
@@ -42,7 +44,7 @@ typedef struct {
 	int            stack_top;
 
 	vm_call_frame_t   frames[VM_CALL_STACK_MAX];
-	int            frame_count;
+	int               frame_count;
 
 	global_entry_t globals[VM_GLOBALS_CAP];
 	int            global_count;

@@ -98,7 +98,7 @@ int chunk_add_sub(chunk_t *c, chunk_t *sub)
 static void vm_val_print(vm_val_t v) {
 	if (v.type == VM_INT)        printf("%lld", (long long)v.i);
 	else if (v.type == VM_FLOAT) printf("%f", v.f);
-	else if (v.type == VM_STR)   printf("\"%s\"", v.s ? v.s : "");
+	else if (v.type == VM_STR)   printf("\"%s\"", v.str->data);
 	else if (v.type == VM_BOOL)  printf("%s", v.b ? "true" : "false");
 	else if (v.type == VM_ARRAY) printf("[array]");
 	else                         printf("nil");
