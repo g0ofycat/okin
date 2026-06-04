@@ -393,12 +393,12 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 	int arg_count = inst->a;
 	if (vm->stack_top < arg_count + 1) vm_error("stack underflow in call");
 
-	vm_val_t callee = vm->stack[vm->stack_top - arg_count - 1];
+	vm_val_t callee = vm->stack[vm->stack_top - 1];
 
 	if (callee.type != VM_INT) vm_error("call on non-function");
 	if (vm->frame_count >= VM_CALL_STACK_MAX) vm_error("call stack overflow");
 
-	chunk_t *fn_chunk = vm->chunk->sub_chunks[callee.i];
+	chunk_t *fn_chunk = current_chunk(vm)->sub_chunks[callee.i];
 
 	int return_ip = CURRENT_FRAME()->local_ip;
 
@@ -412,7 +412,7 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 	memset(frame->locals, 0, sizeof(frame->locals));
 
 	for (int i = 0; i < arg_count; i++) {
-		frame->locals[i] = vm->stack[frame->stack_base + 1 + i];
+		frame->locals[i] = vm->stack[frame->stack_base + i];
 		vm_val_retain(&frame->locals[i]);
 	}
 

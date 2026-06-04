@@ -77,8 +77,10 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 	bool has_dest   = arg_count > param_count;
 	int val_count   = has_dest ? arg_count - 1 : arg_count;
 
-	for (int i = 0; i < param_count && i < val_count; i++)
-		fn_env->declare(std::string(tok_name(fn->args[i + 1])), eval(node->args[i + 1], env));
+	for (int i = 0; i < param_count && i < arg_count; i++) {
+		std::string_view param_name = tok_name(fn->args[i + 1]);
+		fn_env->declare(param_name, eval(node->args[i + 1], env));
+	}
 
 	std::string_view dest_name = has_dest ? tok_name(node->args[node->argc - 1]) : "";
 	call_stack.push_back({ ip, dest_name, has_dest });
@@ -591,8 +593,10 @@ okin_val_t interpreter::eval_call(const okin_node_t *node, enviroment *env)
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;
 
-	for (int i = 0; i < param_count && i < arg_count; i++)
-		fn_env->declare(std::string(tok_name(fn->args[i + 1])), eval(node->args[i + 1], env));
+	for (int i = 0; i < param_count && i < arg_count; i++) {
+		std::string_view param_name = tok_name(fn->args[i + 1]);
+		fn_env->declare(param_name, eval(node->args[i + 1], env));
+	}
 
 	call_stack.push_back({ ip, "", false });
 

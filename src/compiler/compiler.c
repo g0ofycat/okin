@@ -262,6 +262,34 @@ static void pl_resolve(patch_list_t *pl, chunk_t *chunk) {
 		chunk_patch(chunk, pl->entries[i], target);
 }
 
+/// @brief Compile a CALL instruction
+/// @param c: Compiler instance
+/// @param node: CALL node - args: NAME, ...ARGS, DEST
+/// @param as_expr: Call without storing / emitting
+static void compile_call(compiler_t *c, const okin_node_t *node, int as_expr)
+{
+	int argc      = node->argc;
+	int has_dest  = !as_expr && (argc > 1 && node->args[argc - 1]->tok == TK_VALUE);
+	int arg_count = has_dest ? argc - 2 : argc - 1;
+
+	for (int i = 1; i <= arg_count; i++)
+		compile_node(c, node->args[i]);
+
+	const char *name = node->args[0]->val_start;
+	size_t      len  = node->args[0]->val_len;
+	int fn_idx = resolve_func(c, name, len);
+	if (fn_idx != -1)
+		chunk_emit(c->current_scope, OP_LOAD_FUNC, fn_idx);
+	else
+		load_name(c, name, len);
+
+	chunk_emit(c->current_scope, OP_CALL, arg_count);
+
+	if (as_expr)  return;
+	if (has_dest) emit_optional_store(c, node, argc - 1);
+	else          chunk_emit(c->current_scope, OP_POP, 0);
+}
+
 /// @brief Add a scope to a body before compiling
 /// @param c
 /// @param node
@@ -277,6 +305,7 @@ static void compile_scoped_body(compiler_t *c, okin_node_t *node) {
 /// @param len
 static void compile_body(compiler_t *c, okin_node_t **nodes, int len) {
 	for (int i = 0; i < len; ) {
+		if (nodes[i]->opcode == CALL) { compile_call(c, nodes[i++], 0); continue; }
 		if (nodes[i]->opcode != IF) { compile_node(c, nodes[i++]); continue; }
 		patch_list_t ends = {0};
 		while (i < len && (nodes[i]->opcode == IF || nodes[i]->opcode == ELIF)) {
@@ -447,36 +476,6 @@ static void compile_function(compiler_t *c, const okin_node_t *node)
 	c->current_scope = parent;
 }
 
-/// @brief Compile a CALL instruction
-/// @param c: Compiler instance
-/// @param node: CALL node - args: NAME, ...ARGS, DEST
-static void compile_call(compiler_t *c, const okin_node_t *node)
-{
-	int argc = node->argc;
-	int has_dest = (argc > 1 && node->args[argc - 1]->tok == TK_VALUE);
-	int arg_count = has_dest ? argc - 2 : argc - 1;
-
-	for (int i = 1; i <= arg_count; i++) {
-		compile_node(c, node->args[i]);
-	}
-
-	const char *name = node->args[0]->val_start;
-	size_t len = node->args[0]->val_len;
-
-	int fn_idx = resolve_func(c, name, len);
-	if (fn_idx != -1)
-		chunk_emit(c->current_scope, OP_LOAD_FUNC, fn_idx);
-	else
-		load_name(c, name, len);
-
-	chunk_emit(c->current_scope, OP_CALL, arg_count);
-
-	if (has_dest)
-		emit_optional_store(c, node, argc - 1);
-	else
-		chunk_emit(c->current_scope, OP_POP, 0);
-}
-
 // ======================
 // -- ARRAYS
 // ======================
@@ -602,7 +601,6 @@ static void init_compile_table(void)
 	COMPILE_TABLE[SET]      = compile_set;
 	COMPILE_TABLE[GLOBAL]   = compile_global;
 	COMPILE_TABLE[FUNCTION] = compile_function;
-	COMPILE_TABLE[CALL]     = compile_call;
 	COMPILE_TABLE[RET]      = compile_ret;
 	COMPILE_TABLE[FOR]      = compile_for;
 	COMPILE_TABLE[WHILE]    = compile_while;
@@ -648,6 +646,7 @@ static void compile_node(compiler_t *c, const okin_node_t *node)
 	if (node->opcode == TRUE)             { chunk_emit(c->current_scope, OP_TRUE,  0); return; }
 	if (node->opcode == FALSE)            { chunk_emit(c->current_scope, OP_FALSE, 0); return; }
 	if (node->opcode == NIL)              { chunk_emit(c->current_scope, OP_NIL,   0); return; }
+	if (node->opcode == CALL)             { compile_call(c, node, 1); return; }
 
 	compile_fn fn = COMPILE_TABLE[node->opcode];
 	if (!fn) { compiler_error(c, "unknown opcode"); return; }
