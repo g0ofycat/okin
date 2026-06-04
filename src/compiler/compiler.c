@@ -25,7 +25,7 @@ static void load_name(compiler_t *c, const char *name, size_t len)
 {
 	int slot = scope_resolve(c->scope, name, len);
 	if (slot != -1) { chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot); return; }
-	chunk_emit(c->current_scope, OP_LOAD_GLOBAL, chunk_add_const(c->root, vm_val_str(name, len)));
+	chunk_emit(c->current_scope, OP_LOAD_GLOBAL, chunk_add_const(c->current_scope, vm_val_str(name, len)));
 }
 
 /// @brief Store a value into a local slot or global by name
@@ -36,7 +36,7 @@ static void store_name(compiler_t *c, const char *name, size_t len)
 {
 	int slot = scope_resolve(c->scope, name, len);
 	if (slot != -1) { chunk_emit(c->current_scope, OP_STORE_LOCAL, slot); return; }
-	chunk_emit(c->current_scope, OP_STORE_GLOBAL, chunk_add_const(c->root, vm_val_str(name, len)));
+	chunk_emit(c->current_scope, OP_STORE_GLOBAL, chunk_add_const(c->current_scope, vm_val_str(name, len)));
 }
 
 /// @brief Look up a registered function index by name, returns -1 if not found
@@ -126,6 +126,13 @@ static void compile_leaf(compiler_t *c, const okin_node_t *node)
 static void compile_var(compiler_t *c, const okin_node_t *node)
 {
 	compile_node(c, node->args[1]);
+
+	if (c->scope->depth == 0) {
+		chunk_emit(c->current_scope, OP_STORE_GLOBAL,
+				chunk_add_const(c->current_scope,
+					vm_val_str(node->args[0]->val_start, node->args[0]->val_len)));
+		return;
+	}
 
 	int slot = scope_declare(c->scope, node->args[0]->val_start, node->args[0]->val_len);
 	if (slot == -1) { compiler_error(c, "too many locals"); return; }
@@ -466,6 +473,8 @@ static void compile_call(compiler_t *c, const okin_node_t *node)
 
 	if (has_dest)
 		emit_optional_store(c, node, argc - 1);
+	else
+		chunk_emit(c->current_scope, OP_POP, 0);
 }
 
 // ======================

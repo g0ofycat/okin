@@ -127,12 +127,19 @@ static void val_print(const vm_val_t *v)
 // -- CONSTANTS & LOCALS
 // ======================
 
+/// @brief Get current frame chunk or chunk
+/// @param vm
+/// @return chunk_t
+static inline chunk_t *current_chunk(vm_t *vm) {
+	return vm->frame_count > 0 ? CURRENT_FRAME()->chunk : vm->chunk;
+}
+
 /// @brief Push a constant from the pool onto the stack
 /// @param vm: VM instance
 /// @param inst: Instruction (a = constant index)
 static void op_load_const(vm_t *vm, const instruction_t *inst)
 {
-	vm_val_t v = vm->chunk->constants[inst->a];
+	vm_val_t v = current_chunk(vm)->constants[inst->a];
 	vm_val_retain(&v);
 	PUSH(v);
 }
@@ -164,10 +171,10 @@ static void op_store_local(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (a = constant index for name)
 static void op_load_global(vm_t *vm, const instruction_t *inst)
 {
-	vm_val_t  *name = &vm->chunk->constants[inst->a];
+	vm_val_t *name = &current_chunk(vm)->constants[inst->a];
 	if (name->type != VM_STR || !name->str) vm_error("global lookup requires string identifier");
-	vm_val_t  *val  = vm_get_global(vm, name->str->data, strlen(name->str->data));
-	vm_val_t   v    = val ? *val : vm_val_nil();
+	vm_val_t *val = vm_get_global(vm, name->str->data, strlen(name->str->data));
+	vm_val_t  v   = val ? *val : vm_val_nil();
 	vm_val_retain(&v);
 	PUSH(v);
 }
@@ -177,9 +184,9 @@ static void op_load_global(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (a = constant index for name)
 static void op_store_global(vm_t *vm, const instruction_t *inst)
 {
-	vm_val_t *name = &vm->chunk->constants[inst->a];
+	vm_val_t *name = &current_chunk(vm)->constants[inst->a];
 	if (name->type != VM_STR || !name->str) vm_error("global storage requires string identifier");
-	vm_val_t  val  = POP();
+	vm_val_t val = POP();
 	vm_set_global(vm, name->str->data, name->str->len, val);
 }
 
@@ -393,16 +400,19 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 
 	chunk_t *fn_chunk = vm->chunk->sub_chunks[callee.i];
 
+	int return_ip = CURRENT_FRAME()->local_ip;
+
 	vm_call_frame_t *frame = &vm->frames[vm->frame_count++];
 	frame->chunk      = fn_chunk;
-	frame->return_ip  = vm->ip;
-	frame->stack_base = vm->stack_top - arg_count;
-	frame->max_local = arg_count > 0 ? arg_count - 1 : 0;
+	frame->return_ip  = return_ip;
+	frame->local_ip   = 0;
+	frame->stack_base = vm->stack_top - arg_count - 1;
+	frame->max_local  = arg_count > 0 ? arg_count - 1 : 0;
 
 	memset(frame->locals, 0, sizeof(frame->locals));
 
 	for (int i = 0; i < arg_count; i++) {
-		frame->locals[i] = vm->stack[frame->stack_base + i];
+		frame->locals[i] = vm->stack[frame->stack_base + 1 + i];
 		vm_val_retain(&frame->locals[i]);
 	}
 
