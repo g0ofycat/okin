@@ -284,6 +284,8 @@ void interpreter::exec_else(const okin_node_t *node, enviroment *env)
 		auto else_env = std::make_unique<enviroment>(env);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, else_env.get());
+		else if (node->args[0])
+			execute(node->args[0], else_env.get());
 		else
 			runtime_error("no conditional body for ELSE");
 	}

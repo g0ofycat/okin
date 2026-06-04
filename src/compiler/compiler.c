@@ -239,27 +239,26 @@ static void compile_logical(compiler_t *c, const okin_node_t *node)
 // -- CONTROL FLOW
 // ======================
 
-/// @brief Compile IF with backpatching, returns unconditional end-jump index
-/// @param c: Compiler instance
-/// @param node: IF node - args: COND | body
-/// @return End-jump index to be patched later
-static int compile_if(compiler_t *c, const okin_node_t *node)
-{
-	compile_node(c, node->args[0]);
-	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
-	scope_begin(c->scope);
-	compile_body(c, node->body, node->body_len);
-	scope_end(c->scope);
-	int je = chunk_emit(c->current_scope, OP_JMP, 0);
-	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
-	return je;
+/// @brief Add a patch entry
+/// @param pl
+/// @param idx
+static void pl_add(patch_list_t *pl, int idx) {
+	pl->entries[pl->count++] = idx;
 }
 
-/// @brief Compile ELSE body
-/// @param c: Compiler instance
-/// @param node: ELSE node - body only
-static void compile_else(compiler_t *c, const okin_node_t *node)
-{
+/// @brief Resolve a patch
+/// @param pl
+/// @param chunk
+static void pl_resolve(patch_list_t *pl, chunk_t *chunk) {
+	int target = chunk->code_len;
+	for (int i = 0; i < pl->count; i++)
+		chunk_patch(chunk, pl->entries[i], target);
+}
+
+/// @brief Add a scope to a body before compiling
+/// @param c
+/// @param node
+static void compile_scoped_body(compiler_t *c, okin_node_t *node) {
 	scope_begin(c->scope);
 	compile_body(c, node->body, node->body_len);
 	scope_end(c->scope);
@@ -269,34 +268,26 @@ static void compile_else(compiler_t *c, const okin_node_t *node)
 /// @param c
 /// @param nodes
 /// @param len
-static void compile_body(compiler_t *c, okin_node_t **nodes, int len)
-{
-	int i = 0;
-	while (i < len) {
-		if (nodes[i]->opcode == IF) {
-			int patches[64], pc = 0;
-			while (i < len) {
-				uint8_t op = nodes[i]->opcode;
-				if (op == IF) {
-					if (pc == 0) {
-						patches[pc++] = compile_if(c, nodes[i++]);
-					} else {
-						break;
-					}
-				} else if (op == ELIF) {
-					patches[pc++] = compile_if(c, nodes[i++]);
-				} else if (op == ELSE) {
-					compile_else(c, nodes[i++]);
-					break;
-				} else {
-					break;
-				}
-			}
-			for (int j = 0; j < pc; j++)
-				chunk_patch(c->current_scope, patches[j], c->current_scope->code_len);
-		} else {
-			compile_node(c, nodes[i++]);
+static void compile_body(compiler_t *c, okin_node_t **nodes, int len) {
+	for (int i = 0; i < len; ) {
+		if (nodes[i]->opcode != IF) { compile_node(c, nodes[i++]); continue; }
+		patch_list_t ends = {0};
+		while (i < len && (nodes[i]->opcode == IF || nodes[i]->opcode == ELIF)) {
+			compile_node(c, nodes[i]->args[0]);
+			int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
+			compile_scoped_body(c, nodes[i]);
+			pl_add(&ends, chunk_emit(c->current_scope, OP_JMP, 0));
+			chunk_patch(c->current_scope, jf, c->current_scope->code_len);
+			i++;
 		}
+		if (i < len && nodes[i]->opcode == ELSE) {
+			okin_node_t *else_node = nodes[i++];
+			if (else_node->body_len > 0)
+				compile_scoped_body(c, else_node);
+			else if (else_node->args[0])
+				compile_node(c, else_node->args[0]);
+		}
+		pl_resolve(&ends, c->current_scope);
 	}
 }
 

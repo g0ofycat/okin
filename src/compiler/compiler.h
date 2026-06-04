@@ -22,6 +22,11 @@ extern "C" {
 // ======================
 
 typedef struct {
+	int entries[64];
+	int count;
+} patch_list_t;
+
+typedef struct {
 	const char *name;
 	size_t      name_len;
 	int         index;

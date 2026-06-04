@@ -300,12 +300,20 @@ static void op_not(vm_t *vm, const instruction_t *inst)
 // -- JUMPS
 // ======================
 
+/// @brief General jump
+/// @param vm
+/// @param target
+static inline void vm_jump(vm_t *vm, int target)
+{
+	CURRENT_FRAME()->local_ip = target;
+}
+
 /// @brief Unconditional jump
 /// @param vm: VM instance
 /// @param inst: Instruction (a = target ip)
 static void op_jmp(vm_t *vm, const instruction_t *inst)
 {
-	vm->ip = inst->a;
+	vm_jump(vm, inst->a);
 }
 
 /// @brief Jump if top of stack is falsy, pops condition
@@ -314,8 +322,8 @@ static void op_jmp(vm_t *vm, const instruction_t *inst)
 static void op_jmp_false(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t cond = POP();
-	if (!vm_val_truthy(&cond)) vm->ip = inst->a;
-	vm_val_release(&cond);
+	if (!vm_val_truthy(&cond))
+		vm_jump(vm, inst->a);
 }
 
 /// @brief Jump if popped a == b
@@ -324,8 +332,8 @@ static void op_jmp_false(vm_t *vm, const instruction_t *inst)
 static void op_jeq(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t b = POP(), a = POP();
-	if (val_equal(&a, &b)) vm->ip = inst->a;
-	vm_val_release(&a); vm_val_release(&b);
+	if (val_equal(&a, &b))
+		vm_jump(vm, inst->a);
 }
 
 /// @brief Jump if popped a != b
@@ -334,8 +342,8 @@ static void op_jeq(vm_t *vm, const instruction_t *inst)
 static void op_jne(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t b = POP(), a = POP();
-	if (!val_equal(&a, &b)) vm->ip = inst->a;
-	vm_val_release(&a); vm_val_release(&b);
+	if (!val_equal(&a, &b))
+		vm_jump(vm, inst->a);
 }
 
 /// @brief Jump if popped a > b
@@ -344,7 +352,8 @@ static void op_jne(vm_t *vm, const instruction_t *inst)
 static void op_jgt(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t b = POP(), a = POP();
-	if (val_to_float(&a) > val_to_float(&b)) vm->ip = inst->a;
+	if (val_to_float(&a) > val_to_float(&b))
+		vm_jump(vm, inst->a);
 }
 
 /// @brief Jump if popped a < b
@@ -353,7 +362,8 @@ static void op_jgt(vm_t *vm, const instruction_t *inst)
 static void op_jlt(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t b = POP(), a = POP();
-	if (val_to_float(&a) < val_to_float(&b)) vm->ip = inst->a;
+	if (val_to_float(&a) < val_to_float(&b))
+		vm_jump(vm, inst->a);
 }
 
 // ======================
