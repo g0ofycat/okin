@@ -5,8 +5,6 @@
 // -- OPCODES
 //--============
 
-// TODO: use consts for opcodes and type enum as uint8_t
-
 typedef enum {
 	// -- CONSTANTS & LOCALS --
 	OP_LOAD_CONST,    // a = constant pool index

@@ -25,7 +25,7 @@ static void load_name(compiler_t *c, const char *name, size_t len)
 {
 	int slot = scope_resolve(c->scope, name, len);
 	if (slot != -1) { chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot); return; }
-	chunk_emit(c->current_scope, OP_LOAD_GLOBAL, chunk_add_const(c->current_scope, vm_val_str(name, len)));
+	chunk_emit(c->current_scope, OP_LOAD_GLOBAL, chunk_add_const(c->root, vm_val_str(name, len)));
 }
 
 /// @brief Store a value into a local slot or global by name
@@ -36,16 +36,7 @@ static void store_name(compiler_t *c, const char *name, size_t len)
 {
 	int slot = scope_resolve(c->scope, name, len);
 	if (slot != -1) { chunk_emit(c->current_scope, OP_STORE_LOCAL, slot); return; }
-	chunk_emit(c->current_scope, OP_STORE_GLOBAL, chunk_add_const(c->current_scope, vm_val_str(name, len)));
-}
-
-/// @brief Patch all pending break jumps to current ip
-/// @param c: Compiler instance
-static void patch_breaks(compiler_t *c)
-{
-	for (int i = 0; i < c->break_count; i++)
-		chunk_patch(c->current_scope, c->break_patches[i], c->current_scope->code_len);
-	c->break_count = 0;
+	chunk_emit(c->current_scope, OP_STORE_GLOBAL, chunk_add_const(c->root, vm_val_str(name, len)));
 }
 
 /// @brief Look up a registered function index by name, returns -1 if not found
@@ -77,11 +68,26 @@ static void register_func(compiler_t *c, const char *name, size_t len, int index
 	e->index    = index;
 }
 
+/// @brief Emit optional names
+/// @param c
+/// @param node
+/// @param arg_index
+/// @return 1 on success, 0 on failure
+static inline int emit_optional_store(compiler_t *c, const okin_node_t *node, int arg_index)
+{
+	if (node->argc > arg_index && node->args[arg_index]->tok == TK_VALUE) {
+		store_name(c, node->args[arg_index]->val_start, node->args[arg_index]->val_len);
+		return 1;
+	}
+	return 0;
+}
+
 // ======================
 // -- FORWARD DECL
 // ======================
 
 static void compile_node(compiler_t *c, const okin_node_t *node);
+static void compile_body(compiler_t *c, okin_node_t **nodes, int len);
 
 // ======================
 // -- CORE
@@ -136,6 +142,15 @@ static void compile_set(compiler_t *c, const okin_node_t *node)
 	store_name(c, node->args[0]->val_start, node->args[0]->val_len);
 }
 
+/// @brief Compile GLOBAL - marks names as forced-global
+/// @param c: Compiler instance
+/// @param node: GLOBAL node - args: ...NAMES
+static void compile_global(compiler_t *c, const okin_node_t *node)
+{
+	for (int i = 0; i < node->argc; i++)
+		scope_mark_global(c->scope, node->args[i]->val_start, node->args[i]->val_len);
+}
+
 /// @brief Compile RET
 /// @param c: Compiler instance
 /// @param node: RET node - args: VALUE
@@ -152,7 +167,7 @@ static void compile_ret(compiler_t *c, const okin_node_t *node)
 static void compile_break(compiler_t *c, const okin_node_t *node)
 {
 	if (c->break_count >= MAX_BREAK_PATCHES) { compiler_error(c, "too many breaks"); return; }
-	c->break_patches[c->break_count++] = chunk_emit(c->current_scope, OP_BREAK, 0);
+	c->break_patches[c->break_count++] = chunk_emit(c->current_scope, OP_JMP, 0);
 }
 
 // ======================
@@ -173,8 +188,7 @@ static void compile_arith(compiler_t *c, const okin_node_t *node)
 		case DIV: chunk_emit(c->current_scope, OP_DIV, 0); break;
 		case MOD: chunk_emit(c->current_scope, OP_MOD, 0); break;
 	}
-	if (node->argc >= 3 && node->args[2]->tok == TK_VALUE)
-		store_name(c, node->args[2]->val_start, node->args[2]->val_len);
+	emit_optional_store(c, node, 2);
 }
 
 // ======================
@@ -225,30 +239,20 @@ static void compile_logical(compiler_t *c, const okin_node_t *node)
 // -- CONTROL FLOW
 // ======================
 
-/// @brief Compile IF with backpatching
+/// @brief Compile IF with backpatching, returns unconditional end-jump index
 /// @param c: Compiler instance
 /// @param node: IF node - args: COND | body
-static void compile_if(compiler_t *c, const okin_node_t *node)
+/// @return End-jump index to be patched later
+static int compile_if(compiler_t *c, const okin_node_t *node)
 {
 	compile_node(c, node->args[0]);
 	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
 	scope_begin(c->scope);
-	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
+	compile_body(c, node->body, node->body_len);
 	scope_end(c->scope);
+	int je = chunk_emit(c->current_scope, OP_JMP, 0);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
-}
-
-/// @brief Compile ELIF with backpatching
-/// @param c: Compiler instance
-/// @param node: ELIF node - args: COND | body
-static void compile_elif(compiler_t *c, const okin_node_t *node)
-{
-	compile_node(c, node->args[0]);
-	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
-	scope_begin(c->scope);
-	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
-	scope_end(c->scope);
-	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
+	return je;
 }
 
 /// @brief Compile ELSE body
@@ -257,8 +261,43 @@ static void compile_elif(compiler_t *c, const okin_node_t *node)
 static void compile_else(compiler_t *c, const okin_node_t *node)
 {
 	scope_begin(c->scope);
-	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
+	compile_body(c, node->body, node->body_len);
 	scope_end(c->scope);
+}
+
+/// @brief Compile body
+/// @param c
+/// @param nodes
+/// @param len
+static void compile_body(compiler_t *c, okin_node_t **nodes, int len)
+{
+	int i = 0;
+	while (i < len) {
+		if (nodes[i]->opcode == IF) {
+			int patches[64], pc = 0;
+			while (i < len) {
+				uint8_t op = nodes[i]->opcode;
+				if (op == IF) {
+					if (pc == 0) {
+						patches[pc++] = compile_if(c, nodes[i++]);
+					} else {
+						break;
+					}
+				} else if (op == ELIF) {
+					patches[pc++] = compile_if(c, nodes[i++]);
+				} else if (op == ELSE) {
+					compile_else(c, nodes[i++]);
+					break;
+				} else {
+					break;
+				}
+			}
+			for (int j = 0; j < pc; j++)
+				chunk_patch(c->current_scope, patches[j], c->current_scope->code_len);
+		} else {
+			compile_node(c, nodes[i++]);
+		}
+	}
 }
 
 /// @brief Compile WHILE loop with backpatching
@@ -268,13 +307,21 @@ static void compile_while(compiler_t *c, const okin_node_t *node)
 {
 	int loop_start = c->current_scope->code_len;
 	compile_node(c, node->args[0]);
+
 	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
+	int incoming_break_start = c->break_count;
+
 	scope_begin(c->scope);
-	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
+	compile_body(c, node->body, node->body_len);
+
 	scope_end(c->scope);
 	chunk_emit(c->current_scope, OP_JMP, loop_start);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
-	patch_breaks(c);
+
+	for (int i = incoming_break_start; i < c->break_count; i++)
+		chunk_patch(c->current_scope, c->break_patches[i], c->current_scope->code_len);
+
+	c->break_count = incoming_break_start;
 }
 
 /// @brief Compile FOR range loop
@@ -283,31 +330,37 @@ static void compile_while(compiler_t *c, const okin_node_t *node)
 static void compile_for(compiler_t *c, const okin_node_t *node)
 {
 	compile_node(c, node->args[1]);
-	int slot = scope_declare(c->scope, node->args[0]->val_start, node->args[0]->val_len);
 
+	int slot = scope_declare(c->scope, node->args[0]->val_start, node->args[0]->val_len);
 	if (slot == -1) { compiler_error(c, "too many locals"); return; }
+
 	c->current_scope->num_locals++;
 	chunk_emit(c->current_scope, OP_STORE_LOCAL, slot);
 
 	int loop_start = c->current_scope->code_len;
+	int incoming_break_start = c->break_count;
+
 	chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot);
 	compile_node(c, node->args[2]);
-
 	chunk_emit(c->current_scope, OP_LT, 0);
+
 	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
 
 	scope_begin(c->scope);
-	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
-	scope_end(c->scope);
+	compile_body(c, node->body, node->body_len);
 
+	scope_end(c->scope);
 	chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot);
 	compile_node(c, node->args[3]);
 	chunk_emit(c->current_scope, OP_ADD, 0);
 	chunk_emit(c->current_scope, OP_STORE_LOCAL, slot);
-
 	chunk_emit(c->current_scope, OP_JMP, loop_start);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
-	patch_breaks(c);
+
+	for (int i = incoming_break_start; i < c->break_count; i++)
+		chunk_patch(c->current_scope, c->break_patches[i], c->current_scope->code_len);
+
+	c->break_count = incoming_break_start;
 }
 
 // ======================
@@ -348,7 +401,6 @@ static void pre_register_functions(compiler_t *c)
 		chunk_t *fn_chunk = chunk_init(node->args[0]->val_start);
 		int sub_idx       = chunk_add_sub(c->root, fn_chunk);
 		register_func(c, node->args[0]->val_start, node->args[0]->val_len, sub_idx);
-
 	}
 }
 
@@ -357,25 +409,43 @@ static void pre_register_functions(compiler_t *c)
 /// @param node: FUNCTION node - args: NAME, ...PARAMS | body
 static void compile_function(compiler_t *c, const okin_node_t *node)
 {
-	int sub_idx       = resolve_func(c, node->args[0]->val_start, node->args[0]->val_len);
-	chunk_t *fn_chunk = c->root->sub_chunks[sub_idx];
-	chunk_t *parent   = c->current_scope;
-	c->current_scope  = fn_chunk;
+	int sub_idx = resolve_func(c, node->args[0]->val_start, node->args[0]->val_len);
+	if (sub_idx < 0 || sub_idx >= c->root->sub_len) {
+		compiler_error(c, "invalid function index");
+		return;
+	}
+
+	chunk_t  *fn_chunk    = c->root->sub_chunks[sub_idx];
+	chunk_t  *parent      = c->current_scope;
+	scope_t  *parent_scope = c->scope;
+
+	c->current_scope = fn_chunk;
+	c->scope         = scope_init();
 	scope_begin(c->scope);
 
 	for (int i = 1; i < node->argc; i++) {
 		int slot = scope_declare(c->scope, node->args[i]->val_start, node->args[i]->val_len);
+		if (slot == -1) {
+			compiler_error(c, "too many local parameters");
+			scope_end(c->scope);
+			scope_free(c->scope);
+			c->scope         = parent_scope;
+			c->current_scope = parent;
+			return;
+		}
 		fn_chunk->num_params++;
 		fn_chunk->num_locals++;
-		(void)slot;
 	}
 
-	for (int i = 0; i < node->body_len; i++) compile_node(c, node->body[i]);
+	compile_body(c, node->body, node->body_len);
 
 	chunk_emit(c->current_scope, OP_NIL, 0);
 	chunk_emit(c->current_scope, OP_RET, 0);
 
 	scope_end(c->scope);
+	scope_free(c->scope);
+
+	c->scope         = parent_scope;
 	c->current_scope = parent;
 }
 
@@ -384,21 +454,27 @@ static void compile_function(compiler_t *c, const okin_node_t *node)
 /// @param node: CALL node - args: NAME, ...ARGS, DEST
 static void compile_call(compiler_t *c, const okin_node_t *node)
 {
-	int arg_count = node->argc - 2;
-	if (arg_count < 0) arg_count = 0;
+	int argc = node->argc;
+	int has_dest = (argc > 1 && node->args[argc - 1]->tok == TK_VALUE);
+	int arg_count = has_dest ? argc - 2 : argc - 1;
 
-	for (int i = 1; i <= arg_count; i++) compile_node(c, node->args[i]);
+	for (int i = 1; i <= arg_count; i++) {
+		compile_node(c, node->args[i]);
+	}
 
-	int fn_idx = resolve_func(c, node->args[0]->val_start, node->args[0]->val_len);
+	const char *name = node->args[0]->val_start;
+	size_t len = node->args[0]->val_len;
+
+	int fn_idx = resolve_func(c, name, len);
 	if (fn_idx != -1)
 		chunk_emit(c->current_scope, OP_LOAD_FUNC, fn_idx);
 	else
-		load_name(c, node->args[0]->val_start, node->args[0]->val_len);
+		load_name(c, name, len);
 
 	chunk_emit(c->current_scope, OP_CALL, arg_count);
 
-	if (node->argc >= 2 && node->args[node->argc - 1]->tok == TK_VALUE)
-		store_name(c, node->args[node->argc - 1]->val_start, node->args[node->argc - 1]->val_len);
+	if (has_dest)
+		emit_optional_store(c, node, argc - 1);
 }
 
 // ======================
@@ -422,8 +498,7 @@ static void compile_aget(compiler_t *c, const okin_node_t *node)
 	compile_node(c, node->args[0]);
 	compile_node(c, node->args[1]);
 	chunk_emit(c->current_scope, OP_ARRAY_GET, 0);
-	if (node->argc >= 3 && node->args[2]->tok == TK_VALUE)
-		store_name(c, node->args[2]->val_start, node->args[2]->val_len);
+	emit_optional_store(c, node, 2);
 }
 
 /// @brief Compile ASET (array set)
@@ -486,8 +561,7 @@ static void compile_string(compiler_t *c, const okin_node_t *node)
 	else { compiler_error(c, "unknown STRING method"); return; }
 
 	chunk_emit(c->current_scope, op, 0);
-	if (node->args[node->argc - 1]->tok == TK_VALUE)
-		store_name(c, node->args[node->argc - 1]->val_start, node->args[node->argc - 1]->val_len);
+	emit_optional_store(c, node, node->argc - 1);
 }
 
 /// @brief Compile a MATH lib call
@@ -509,8 +583,7 @@ static void compile_math(compiler_t *c, const okin_node_t *node)
 	else { compiler_error(c, "unknown MATH method"); return; }
 
 	chunk_emit(c->current_scope, op, 0);
-	if (node->args[node->argc - 1]->tok == TK_VALUE)
-		store_name(c, node->args[node->argc - 1]->val_start, node->args[node->argc - 1]->val_len);
+	emit_optional_store(c, node, node->argc - 1);
 }
 
 // ======================
@@ -527,15 +600,14 @@ static void init_compile_table(void)
 
 	COMPILE_TABLE[VAR]      = compile_var;
 	COMPILE_TABLE[SET]      = compile_set;
+	COMPILE_TABLE[GLOBAL]   = compile_global;
 	COMPILE_TABLE[FUNCTION] = compile_function;
 	COMPILE_TABLE[CALL]     = compile_call;
 	COMPILE_TABLE[RET]      = compile_ret;
 	COMPILE_TABLE[FOR]      = compile_for;
 	COMPILE_TABLE[WHILE]    = compile_while;
 	COMPILE_TABLE[BREAK]    = compile_break;
-	COMPILE_TABLE[IF]       = compile_if;
-	COMPILE_TABLE[ELIF]     = compile_elif;
-	COMPILE_TABLE[ELSE]     = compile_else;
+
 	COMPILE_TABLE[ADD]      = compile_arith;
 	COMPILE_TABLE[SUB]      = compile_arith;
 	COMPILE_TABLE[MUL]      = compile_arith;
@@ -573,7 +645,6 @@ static void compile_node(compiler_t *c, const okin_node_t *node)
 	if (node->opcode == NODE_LEAF)        { compile_leaf(c, node); return; }
 	if (node->opcode == NODE_JUMP_TARGET) return;
 	if (node->opcode == LABEL)            return;
-	if (node->opcode == GLOBAL)           return;
 	if (node->opcode == TRUE)             { chunk_emit(c->current_scope, OP_TRUE,  0); return; }
 	if (node->opcode == FALSE)            { chunk_emit(c->current_scope, OP_FALSE, 0); return; }
 	if (node->opcode == NIL)              { chunk_emit(c->current_scope, OP_NIL,   0); return; }
@@ -607,8 +678,7 @@ compiler_t *compiler_init(const parser_t *parser)
 void compiler_run(compiler_t *c)
 {
 	pre_register_functions(c);
-	for (int i = 0; i < c->parser->program->len; i++)
-		compile_node(c, c->parser->program->nodes[i]);
+	compile_body(c, c->parser->program->nodes, c->parser->program->len);
 	chunk_emit(c->current_scope, OP_HALT, 0);
 }
 

@@ -50,13 +50,11 @@ static vm_val_t *vm_get_global(vm_t *vm, const char *key, size_t len)
 /// @param val: Value to set
 static void vm_set_global(vm_t *vm, const char *key, size_t len, vm_val_t val)
 {
-	for (int i = 0; i < vm->global_count; i++) {
-		global_entry_t *e = &vm->globals[i];
-		if (e->key_len == len && memcmp(e->key, key, len) == 0) {
-			vm_val_release(&e->val);
-			e->val = val;
-			return;
-		}
+	vm_val_t *existing = vm_get_global(vm, key, len);
+	if (existing) {
+		vm_val_release(existing);
+		*existing = val;
+		return;
 	}
 
 	if (vm->global_count >= VM_GLOBALS_CAP) { vm_error("too many globals"); return; }
@@ -113,7 +111,7 @@ static void val_print(const vm_val_t *v)
 		case VM_BOOL:  printf("%s", v->b ? "true" : "false"); break;
 		case VM_INT:   printf("%lld", (long long)v->i); break;
 		case VM_FLOAT: printf("%g", v->f); break;
-		case VM_STR:   printf("\"%s\"", v->str->data); break;
+		case VM_STR:   printf("%s", v->str->data); break;
 		case VM_ARRAY:
 					   printf("[");
 					   for (int i = 0; i < v->arr->len; i++) {
@@ -154,6 +152,8 @@ static void op_load_local(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (a = slot index)
 static void op_store_local(vm_t *vm, const instruction_t *inst)
 {
+	if (inst->a > CURRENT_FRAME()->max_local)
+		CURRENT_FRAME()->max_local = inst->a;
 	vm_val_t *slot = &CURRENT_FRAME()->locals[inst->a];
 	vm_val_release(slot);
 	*slot = POP();
@@ -208,7 +208,7 @@ static void op_pop(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (op selects operation)
 static void op_arith(vm_t *vm, const instruction_t *inst)
 {
-	vm_val_t b = POP(), a = POP();
+	vm_val_t a = POP(), b = POP();
 	int both_int = (a.type == VM_INT && b.type == VM_INT);
 
 	if (inst->op == OP_MOD) {
@@ -373,8 +373,10 @@ static void op_load_func(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (a = arg count)
 static void op_call(vm_t *vm, const instruction_t *inst)
 {
-	int       arg_count = inst->a;
-	vm_val_t  callee    = vm->stack[vm->stack_top - arg_count - 1];
+	int arg_count = inst->a;
+	if (vm->stack_top < arg_count + 1) vm_error("stack underflow in call");
+
+	vm_val_t callee = vm->stack[vm->stack_top - arg_count - 1];
 
 	if (callee.type != VM_INT) vm_error("call on non-function");
 	if (vm->frame_count >= VM_CALL_STACK_MAX) vm_error("call stack overflow");
@@ -385,6 +387,7 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 	frame->chunk      = fn_chunk;
 	frame->return_ip  = vm->ip;
 	frame->stack_base = vm->stack_top - arg_count;
+	frame->max_local = arg_count > 0 ? arg_count - 1 : 0;
 
 	memset(frame->locals, 0, sizeof(frame->locals));
 
@@ -394,8 +397,6 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 	}
 
 	vm->stack_top = frame->stack_base;
-	vm->chunk = fn_chunk;
-	vm->ip    = 0;
 }
 
 /// @brief Return from a function, restoring caller frame
@@ -404,21 +405,15 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 static void op_ret(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t retval = POP();
-	vm_val_retain(&retval);
 
 	vm_call_frame_t *frame = &vm->frames[--vm->frame_count];
+	vm->stack_top = frame->stack_base;
 
-	for (int i = 0; i < VM_LOCALS_CAP; i++)
-		vm_val_release(&frame->locals[i]);
-
-	vm->stack_top = frame->stack_base - 1;
-	vm->ip        = frame->return_ip;
-	vm->chunk     = vm->frame_count > 0
-		? vm->frames[vm->frame_count - 1].chunk
-		: vm->chunk;
+	if (vm->frame_count > 0) {
+		vm->frames[vm->frame_count - 1].local_ip = frame->return_ip;
+	}
 
 	PUSH(retval);
-	vm_val_release(&retval);
 }
 
 // ======================
@@ -430,11 +425,12 @@ static void op_ret(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (a = element count)
 static void op_make_array(vm_t *vm, const instruction_t *inst)
 {
-	int       count = inst->a;
-	vm_val_t  arr   = vm_val_array();
-	for (int i = vm->stack_top - count; i < vm->stack_top; i++)
-		vm_array_push(arr.arr, vm->stack[i]);
-	vm->stack_top -= count;
+	int count = inst->a;
+	vm_val_t arr = vm_val_array();
+	for (int i = 0; i < count; i++) {
+		vm_val_t element = POP(); 
+		vm_array_push(arr.arr, element);
+	}
 	PUSH(arr);
 }
 
@@ -587,39 +583,35 @@ static void op_str_find(vm_t *vm, const instruction_t *inst)
 	PUSH(vm_val_int(idx));
 }
 
-/// @brief Uppercase: pops string, pushes uppercased copy
-/// @param vm: VM instance
-/// @param inst: Instruction
-static void op_str_upper(vm_t *vm, const instruction_t *inst)
+/// @brief For upper and lower string logic
+/// @param vm
+/// @param transform_fn
+static inline void op_str_transform(vm_t *vm, int (*transform_fn)(int))
 {
 	vm_val_t s = POP();
-	if (s.type != VM_STR || !s.str) vm_error("str_upper on non-string");
+	if (s.type != VM_STR || !s.str) vm_error("str_transform on non-string");
+
 	size_t len = s.str->len;
-	char  *buf = malloc(len + 1);
-	for (size_t i = 0; i <= len; i++)
-		buf[i] = (char)toupper((unsigned char)s.str->data[i]);
+	char *buf = malloc(len + 1);
+	for (size_t i = 0; i <= len; i++) {
+		buf[i] = (char)transform_fn((unsigned char)s.str->data[i]);
+	}
+
 	vm_val_release(&s);
 	vm_val_t result = vm_val_str(buf, len);
 	free(buf);
 	PUSH(result);
 }
 
+/// @brief Uppercase: pops string, pushes uppercased copy
+/// @param vm: VM instance
+/// @param inst: Instruction
+static void op_str_upper(vm_t *vm, const instruction_t *inst) { op_str_transform(vm, toupper); }
+
 /// @brief Lowercase: pops string, pushes lowercased copy
 /// @param vm: VM instance
 /// @param inst: Instruction
-static void op_str_lower(vm_t *vm, const instruction_t *inst)
-{
-	vm_val_t s = POP();
-	if (s.type != VM_STR || !s.str) vm_error("str_lower on non-string");
-	size_t len = s.str->len;
-	char  *buf = malloc(len + 1);
-	for (size_t i = 0; i <= len; i++)
-		buf[i] = (char)tolower((unsigned char)s.str->data[i]);
-	vm_val_release(&s);
-	vm_val_t result = vm_val_str(buf, len);
-	free(buf);
-	PUSH(result);
-}
+static void op_str_lower(vm_t *vm, const instruction_t *inst) { op_str_transform(vm, tolower); }
 
 // ======================
 // -- MATH
@@ -704,93 +696,6 @@ static void op_halt(vm_t *vm, const instruction_t *inst)
 	vm->ip = vm->chunk->code_len;
 }
 
-/// @brief Break out of loop by jumping to patch target
-/// @param vm: VM instance
-/// @param inst: Instruction (a = target ip)
-static void op_break(vm_t *vm, const instruction_t *inst)
-{
-	vm->ip = inst->a;
-}
-
-// ======================
-// -- DISPATCH
-// ======================
-
-typedef void (*vm_fn)(vm_t *, const instruction_t *);
-static vm_fn VM_TABLE[256];
-
-/// @brief Initialize the VM dispatch table
-static void init_vm_table(void)
-{
-	memset(VM_TABLE, 0, sizeof(VM_TABLE));
-
-	VM_TABLE[OP_LOAD_CONST]   = op_load_const;
-	VM_TABLE[OP_LOAD_LOCAL]   = op_load_local;
-	VM_TABLE[OP_STORE_LOCAL]  = op_store_local;
-	VM_TABLE[OP_LOAD_GLOBAL]  = op_load_global;
-	VM_TABLE[OP_STORE_GLOBAL] = op_store_global;
-
-	VM_TABLE[OP_TRUE]         = op_true;
-	VM_TABLE[OP_FALSE]        = op_false;
-	VM_TABLE[OP_NIL]          = op_nil;
-	VM_TABLE[OP_POP]          = op_pop;
-
-	VM_TABLE[OP_ADD]          = op_arith;
-	VM_TABLE[OP_SUB]          = op_arith;
-	VM_TABLE[OP_MUL]          = op_arith;
-	VM_TABLE[OP_DIV]          = op_arith;
-	VM_TABLE[OP_MOD]          = op_arith;
-
-	VM_TABLE[OP_EQ]           = op_cmp;
-	VM_TABLE[OP_NEQ]          = op_cmp;
-	VM_TABLE[OP_GT]           = op_cmp;
-	VM_TABLE[OP_LT]           = op_cmp;
-	VM_TABLE[OP_GTE]          = op_cmp;
-	VM_TABLE[OP_LTE]          = op_cmp;
-
-	VM_TABLE[OP_AND]          = op_and;
-	VM_TABLE[OP_OR]           = op_or;
-	VM_TABLE[OP_NOT]          = op_not;
-
-	VM_TABLE[OP_JMP]          = op_jmp;
-	VM_TABLE[OP_JMP_FALSE]    = op_jmp_false;
-	VM_TABLE[OP_JEQ]          = op_jeq;
-	VM_TABLE[OP_JNE]          = op_jne;
-	VM_TABLE[OP_JGT]          = op_jgt;
-	VM_TABLE[OP_JLT]          = op_jlt;
-
-	VM_TABLE[OP_LOAD_FUNC]    = op_load_func;
-	VM_TABLE[OP_CALL]         = op_call;
-	VM_TABLE[OP_RET]          = op_ret;
-
-	VM_TABLE[OP_MAKE_ARRAY]   = op_make_array;
-	VM_TABLE[OP_ARRAY_GET]    = op_array_get;
-	VM_TABLE[OP_ARRAY_SET]    = op_array_set;
-	VM_TABLE[OP_IN]           = op_in;
-
-	VM_TABLE[OP_IO_WRITE]     = op_io_write;
-	VM_TABLE[OP_IO_WRITELN]   = op_io_writeln;
-	VM_TABLE[OP_IO_READ]      = op_io_read;
-
-	VM_TABLE[OP_STR_LEN]      = op_str_len;
-	VM_TABLE[OP_STR_CONCAT]   = op_str_concat;
-	VM_TABLE[OP_STR_SLICE]    = op_str_slice;
-	VM_TABLE[OP_STR_FIND]     = op_str_find;
-	VM_TABLE[OP_STR_UPPER]    = op_str_upper;
-	VM_TABLE[OP_STR_LOWER]    = op_str_lower;
-
-	VM_TABLE[OP_MATH_POW]     = op_math_pow;
-	VM_TABLE[OP_MATH_SQRT]    = op_math_sqrt;
-	VM_TABLE[OP_MATH_ABS]     = op_math_abs;
-	VM_TABLE[OP_MATH_MIN]     = op_math_min;
-	VM_TABLE[OP_MATH_MAX]     = op_math_max;
-	VM_TABLE[OP_MATH_FLOOR]   = op_math_floor;
-	VM_TABLE[OP_MATH_CEIL]    = op_math_ceil;
-
-	VM_TABLE[OP_HALT]         = op_halt;
-	VM_TABLE[OP_BREAK]        = op_break;
-}
-
 // ======================
 // -- VM
 // ======================
@@ -800,9 +705,6 @@ static void init_vm_table(void)
 /// @return vm_t*
 vm_t *vm_init(chunk_t *root)
 {
-	static int initialized = 0;
-	if (!initialized) { init_vm_table(); initialized = 1; }
-
 	vm_t *vm = calloc(1, sizeof(vm_t));
 
 	vm_call_frame_t *frame = &vm->frames[vm->frame_count++];
@@ -820,15 +722,95 @@ vm_t *vm_init(chunk_t *root)
 /// @param vm: VM instance
 void vm_run(vm_t *vm)
 {
-	while (vm->ip < vm->chunk->code_len) {
-		instruction_t *inst = &vm->chunk->code[vm->ip++];
-		vm_fn handler = VM_TABLE[inst->op];
-		if (handler) {
-			handler(vm, inst);
-		} else {
-			char buf[64];
-			snprintf(buf, sizeof(buf), "unhandled opcode: %d", inst->op);
-			vm_error(buf);
+	while (vm->frame_count > 0) {
+		vm_call_frame_t *frame = CURRENT_FRAME();
+		if (frame->local_ip >= frame->chunk->code_len) break;
+
+		instruction_t *inst = &frame->chunk->code[frame->local_ip++];
+
+		switch (inst->op) {
+			case OP_LOAD_CONST:   op_load_const(vm, inst); break;
+			case OP_LOAD_LOCAL:   op_load_local(vm, inst); break;
+			case OP_STORE_LOCAL:  op_store_local(vm, inst); break;
+
+			case OP_LOAD_GLOBAL:  op_load_global(vm, inst); break;
+			case OP_STORE_GLOBAL: op_store_global(vm, inst); break;
+
+			case OP_TRUE:  op_true(vm, inst); break;
+			case OP_FALSE: op_false(vm, inst); break;
+			case OP_NIL:   op_nil(vm, inst); break;
+			case OP_POP:   op_pop(vm, inst); break;
+
+			case OP_ADD:
+			case OP_SUB:
+			case OP_MUL:
+			case OP_DIV:
+			case OP_MOD:
+						   op_arith(vm, inst);
+						   break;
+
+			case OP_EQ:
+			case OP_NEQ:
+			case OP_GT:
+			case OP_LT:
+			case OP_GTE:
+			case OP_LTE:
+						   op_cmp(vm, inst);
+						   break;
+
+			case OP_AND: op_and(vm, inst); break;
+			case OP_OR:  op_or(vm, inst); break;
+			case OP_NOT: op_not(vm, inst); break;
+
+			case OP_JMP:       op_jmp(vm, inst); break;
+			case OP_JMP_FALSE: op_jmp_false(vm, inst); break;
+			case OP_JEQ:       op_jeq(vm, inst); break;
+
+			case OP_JNE:       op_jne(vm, inst); break;
+			case OP_JGT:       op_jgt(vm, inst); break;
+			case OP_JLT:       op_jlt(vm, inst); break;
+
+			case OP_LOAD_FUNC: op_load_func(vm, inst); break;
+
+			case OP_CALL:      op_call(vm, inst); break;
+			case OP_RET:       op_ret(vm, inst); break;
+
+			case OP_MAKE_ARRAY: op_make_array(vm, inst); break;
+			case OP_ARRAY_GET:  op_array_get(vm, inst); break;
+			case OP_ARRAY_SET:  op_array_set(vm, inst); break;
+			case OP_IN:         op_in(vm, inst); break;
+
+			case OP_IO_WRITE:   op_io_write(vm, inst); break;
+			case OP_IO_WRITELN: op_io_writeln(vm, inst); break;
+			case OP_IO_READ:    op_io_read(vm, inst); break;
+
+			case OP_STR_LEN:    op_str_len(vm, inst); break;
+			case OP_STR_CONCAT: op_str_concat(vm, inst); break;
+			case OP_STR_SLICE:  op_str_slice(vm, inst); break;
+			case OP_STR_FIND:   op_str_find(vm, inst); break;
+			case OP_STR_UPPER:  op_str_upper(vm, inst); break;
+			case OP_STR_LOWER:  op_str_lower(vm, inst); break;
+
+			case OP_MATH_POW:   op_math_pow(vm, inst); break;
+			case OP_MATH_SQRT:  op_math_sqrt(vm, inst); break;
+			case OP_MATH_ABS:   op_math_abs(vm, inst); break;
+			case OP_MATH_MIN:   op_math_min(vm, inst); break;
+			case OP_MATH_MAX:   op_math_max(vm, inst); break;
+			case OP_MATH_FLOOR: op_math_floor(vm, inst); break;
+			case OP_MATH_CEIL:  op_math_ceil(vm, inst); break;
+
+			case OP_HALT:
+								op_halt(vm, inst);
+								return;
+			case OP_BREAK:
+								op_jmp(vm, inst);
+								break;
+			default:
+								{
+									char buf[64];
+									snprintf(buf, sizeof(buf), "unhandled opcode: %d", inst->op);
+									vm_error(buf);
+								}
 		}
 	}
 }

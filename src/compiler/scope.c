@@ -42,19 +42,36 @@ int scope_declare(scope_t *s, const char *name, size_t len)
 	return slot;
 }
 
-/// @brief Resolve a local variable by name, returns slot or -1 if not found
+/// @brief Resolve a local variable by name, returns slot or -1 if not found or forced-global
 /// @param s
 /// @param name
 /// @param len
-/// @return Slot Index, or -1 if not found
+/// @return Slot Index, or -1 if not found or forced-global
 int scope_resolve(const scope_t *s, const char *name, size_t len)
 {
+	for (int i = 0; i < s->global_count; i++) {
+		const global_t *g = &s->globals[i];
+		if (g->name_len == len && memcmp(g->name, name, len) == 0)
+			return -1;
+	}
 	for (int i = s->local_count - 1; i >= 0; i--) {
 		const local_t *l = &s->locals[i];
 		if (l->name_len == len && memcmp(l->name, name, len) == 0)
 			return l->slot;
 	}
 	return -1;
+}
+
+/// @brief Mark a name as forced-global in the current scope
+/// @param s
+/// @param name
+/// @param len
+void scope_mark_global(scope_t *s, const char *name, size_t len)
+{
+	if (s->global_count >= MAX_GLOBALS) return;
+	global_t *g = &s->globals[s->global_count++];
+	g->name = name;
+	g->name_len = len;
 }
 
 /// @brief Begin a new block scope
