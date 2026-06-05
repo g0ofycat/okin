@@ -28,6 +28,32 @@ static void vm_error(const char *msg)
 	exit(1);
 }
 
+/// @brief Hash function (FNV-1a)
+/// @param key
+/// @param len
+/// @return uint32_t
+static uint32_t hash_key(const char *key, size_t len) {
+	uint32_t h = 2166136261u;
+	for (size_t i = 0; i < len; i++)
+		h = (h ^ (uint8_t)key[i]) * 16777619u;
+	return h;
+}
+
+/// @brief Find given slot in hash table
+/// @param vm
+/// @param key
+/// @param len
+/// @return global_entry_t
+static global_entry_t *globals_find_slot(vm_t *vm, const char *key, size_t len) {
+	uint32_t idx = hash_key(key, len) & (VM_GLOBALS_CAP - 1);
+	for (;;) {
+		global_entry_t *e = &vm->globals[idx];
+		if (!e->occupied || (e->key_len == len && memcmp(e->key, key, len) == 0))
+			return e;
+		idx = (idx + 1) & (VM_GLOBALS_CAP - 1);
+	}
+}
+
 /// @brief Get a global by name, returns NULL if not found
 /// @param vm: VM instance
 /// @param key: Global name
@@ -35,12 +61,8 @@ static void vm_error(const char *msg)
 /// @return vm_val_t*
 static vm_val_t *vm_get_global(vm_t *vm, const char *key, size_t len)
 {
-	for (int i = 0; i < vm->global_count; i++) {
-		global_entry_t *e = &vm->globals[i];
-		if (e->key_len == len && memcmp(e->key, key, len) == 0)
-			return &e->val;
-	}
-	return NULL;
+	global_entry_t *e = globals_find_slot(vm, key, len);
+	return e->occupied ? &e->val : NULL;
 }
 
 /// @brief Set a global by name, creates if not found
@@ -50,23 +72,24 @@ static vm_val_t *vm_get_global(vm_t *vm, const char *key, size_t len)
 /// @param val: Value to set
 static void vm_set_global(vm_t *vm, const char *key, size_t len, vm_val_t val)
 {
-	vm_val_t *existing = vm_get_global(vm, key, len);
-	if (existing) {
-		vm_val_release(existing);
-		*existing = val;
+	if (vm->global_count >= VM_GLOBALS_CAP * 3 / 4) vm_error("too many globals");
+	global_entry_t *e = globals_find_slot(vm, key, len);
+
+	if (e->occupied) {
+		vm_val_release(&e->val);
+		e->val = val;
 		return;
 	}
-
-	if (vm->global_count >= VM_GLOBALS_CAP) { vm_error("too many globals"); return; }
-	global_entry_t *e = &vm->globals[vm->global_count++];
 
 	char *key_copy = malloc(len + 1);
 	memcpy(key_copy, key, len);
 	key_copy[len] = '\0';
 
-	e->key     = key_copy;
-	e->key_len = len;
-	e->val     = val;
+	e->key      = key_copy;
+	e->key_len  = len;
+	e->val      = val;
+	e->occupied = 1;
+	vm->global_count++;
 }
 
 // ======================
@@ -173,7 +196,7 @@ static void op_load_global(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t *name = &current_chunk(vm)->constants[inst->a];
 	if (name->type != VM_STR || !name->str) vm_error("global lookup requires string identifier");
-	vm_val_t *val = vm_get_global(vm, name->str->data, strlen(name->str->data));
+	vm_val_t *val = vm_get_global(vm, name->str->data, name->str->len);
 	vm_val_t  v   = val ? *val : vm_val_nil();
 	vm_val_retain(&v);
 	PUSH(v);
@@ -425,13 +448,15 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 static void op_ret(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t retval = POP();
-
 	vm_call_frame_t *frame = &vm->frames[--vm->frame_count];
+
+	for (int i = 0; i <= frame->max_local; i++)
+		vm_val_release(&frame->locals[i]);
+
 	vm->stack_top = frame->stack_base;
 
-	if (vm->frame_count > 0) {
+	if (vm->frame_count > 0)
 		vm->frames[vm->frame_count - 1].local_ip = frame->return_ip;
-	}
 
 	PUSH(retval);
 }
@@ -705,18 +730,6 @@ static void op_math_ceil(vm_t *vm, const instruction_t *inst)
 }
 
 // ======================
-// -- CONTROL
-// ======================
-
-/// @brief Halt execution
-/// @param vm: VM instance
-/// @param inst: Instruction
-static void op_halt(vm_t *vm, const instruction_t *inst)
-{
-	vm->ip = vm->chunk->code_len;
-}
-
-// ======================
 // -- VM
 // ======================
 
@@ -742,97 +755,126 @@ vm_t *vm_init(chunk_t *root)
 /// @param vm: VM instance
 void vm_run(vm_t *vm)
 {
-	while (vm->frame_count > 0) {
-		vm_call_frame_t *frame = CURRENT_FRAME();
-		if (frame->local_ip >= frame->chunk->code_len) break;
+	if (vm->frame_count == 0) return;
 
-		instruction_t *inst = &frame->chunk->code[frame->local_ip++];
+#define NEXT() \
+	do { \
+		frame = CURRENT_FRAME(); \
+		if (frame->local_ip >= frame->chunk->code_len) goto halt; \
+		inst = &frame->chunk->code[frame->local_ip++]; \
+		goto *dispatch[inst->op]; \
+	} while (0)
 
-		switch (inst->op) {
-			case OP_LOAD_CONST:   op_load_const(vm, inst); break;
-			case OP_LOAD_LOCAL:   op_load_local(vm, inst); break;
-			case OP_STORE_LOCAL:  op_store_local(vm, inst); break;
+	vm_call_frame_t *frame = CURRENT_FRAME();
+	instruction_t   *inst;
 
-			case OP_LOAD_GLOBAL:  op_load_global(vm, inst); break;
-			case OP_STORE_GLOBAL: op_store_global(vm, inst); break;
+	static const void *dispatch[] = {
+		[OP_LOAD_CONST]   = &&op_load_const,
+		[OP_LOAD_LOCAL]   = &&op_load_local,
+		[OP_STORE_LOCAL]  = &&op_store_local,
+		[OP_LOAD_GLOBAL]  = &&op_load_global,
+		[OP_STORE_GLOBAL] = &&op_store_global,
+		[OP_TRUE]         = &&op_true,
+		[OP_FALSE]        = &&op_false,
+		[OP_NIL]          = &&op_nil,
+		[OP_POP]          = &&op_pop,
+		[OP_ADD]          = &&op_arith,
+		[OP_SUB]          = &&op_arith,
+		[OP_MUL]          = &&op_arith,
+		[OP_DIV]          = &&op_arith,
+		[OP_MOD]          = &&op_arith,
+		[OP_EQ]           = &&op_cmp,
+		[OP_NEQ]          = &&op_cmp,
+		[OP_GT]           = &&op_cmp,
+		[OP_LT]           = &&op_cmp,
+		[OP_GTE]          = &&op_cmp,
+		[OP_LTE]          = &&op_cmp,
+		[OP_AND]          = &&op_and,
+		[OP_OR]           = &&op_or,
+		[OP_NOT]          = &&op_not,
+		[OP_JMP]          = &&op_jmp,
+		[OP_JMP_FALSE]    = &&op_jmp_false,
+		[OP_JEQ]          = &&op_jeq,
+		[OP_JNE]          = &&op_jne,
+		[OP_JGT]          = &&op_jgt,
+		[OP_JLT]          = &&op_jlt,
+		[OP_LOAD_FUNC]    = &&op_load_func,
+		[OP_CALL]         = &&op_call,
+		[OP_RET]          = &&op_ret,
+		[OP_MAKE_ARRAY]   = &&op_make_array,
+		[OP_ARRAY_GET]    = &&op_array_get,
+		[OP_ARRAY_SET]    = &&op_array_set,
+		[OP_IN]           = &&op_in,
+		[OP_IO_WRITE]     = &&op_io_write,
+		[OP_IO_WRITELN]   = &&op_io_writeln,
+		[OP_IO_READ]      = &&op_io_read,
+		[OP_STR_LEN]      = &&op_str_len,
+		[OP_STR_CONCAT]   = &&op_str_concat,
+		[OP_STR_SLICE]    = &&op_str_slice,
+		[OP_STR_FIND]     = &&op_str_find,
+		[OP_STR_UPPER]    = &&op_str_upper,
+		[OP_STR_LOWER]    = &&op_str_lower,
+		[OP_MATH_POW]     = &&op_math_pow,
+		[OP_MATH_SQRT]    = &&op_math_sqrt,
+		[OP_MATH_ABS]     = &&op_math_abs,
+		[OP_MATH_MIN]     = &&op_math_min,
+		[OP_MATH_MAX]     = &&op_math_max,
+		[OP_MATH_FLOOR]   = &&op_math_floor,
+		[OP_MATH_CEIL]    = &&op_math_ceil,
+		[OP_BREAK]        = &&op_jmp,
+		[OP_HALT]         = &&halt,
+	};
 
-			case OP_TRUE:  op_true(vm, inst); break;
-			case OP_FALSE: op_false(vm, inst); break;
-			case OP_NIL:   op_nil(vm, inst); break;
-			case OP_POP:   op_pop(vm, inst); break;
+	NEXT();
 
-			case OP_ADD:
-			case OP_SUB:
-			case OP_MUL:
-			case OP_DIV:
-			case OP_MOD:
-						   op_arith(vm, inst);
-						   break;
+op_load_const:   op_load_const(vm, inst);   NEXT();
+op_load_local:   op_load_local(vm, inst);   NEXT();
+op_store_local:  op_store_local(vm, inst);  NEXT();
+op_load_global:  op_load_global(vm, inst);  NEXT();
+op_store_global: op_store_global(vm, inst); NEXT();
+op_true:         op_true(vm, inst);         NEXT();
+op_false:        op_false(vm, inst);        NEXT();
+op_nil:          op_nil(vm, inst);          NEXT();
+op_pop:          op_pop(vm, inst);          NEXT();
+op_arith:        op_arith(vm, inst);        NEXT();
+op_cmp:          op_cmp(vm, inst);          NEXT();
+op_and:          op_and(vm, inst);          NEXT();
+op_or:           op_or(vm, inst);           NEXT();
+op_not:          op_not(vm, inst);          NEXT();
+op_jmp:          op_jmp(vm, inst);          NEXT();
+op_jmp_false:    op_jmp_false(vm, inst);    NEXT();
+op_jeq:          op_jeq(vm, inst);          NEXT();
+op_jne:          op_jne(vm, inst);          NEXT();
+op_jgt:          op_jgt(vm, inst);          NEXT();
+op_jlt:          op_jlt(vm, inst);          NEXT();
+op_load_func:    op_load_func(vm, inst);    NEXT();
+op_call:         op_call(vm, inst);         frame = CURRENT_FRAME(); NEXT();
+op_ret:          op_ret(vm, inst);          frame = CURRENT_FRAME(); NEXT();
+op_make_array:   op_make_array(vm, inst);   NEXT();
+op_array_get:    op_array_get(vm, inst);    NEXT();
+op_array_set:    op_array_set(vm, inst);    NEXT();
+op_in:           op_in(vm, inst);           NEXT();
+op_io_write:     op_io_write(vm, inst);     NEXT();
+op_io_writeln:   op_io_writeln(vm, inst);   NEXT();
+op_io_read:      op_io_read(vm, inst);      NEXT();
+op_str_len:      op_str_len(vm, inst);      NEXT();
+op_str_concat:   op_str_concat(vm, inst);   NEXT();
+op_str_slice:    op_str_slice(vm, inst);    NEXT();
+op_str_find:     op_str_find(vm, inst);     NEXT();
+op_str_upper:    op_str_upper(vm, inst);    NEXT();
+op_str_lower:    op_str_lower(vm, inst);    NEXT();
+op_math_pow:     op_math_pow(vm, inst);     NEXT();
+op_math_sqrt:    op_math_sqrt(vm, inst);    NEXT();
+op_math_abs:     op_math_abs(vm, inst);     NEXT();
+op_math_min:     op_math_min(vm, inst);     NEXT();
+op_math_max:     op_math_max(vm, inst);     NEXT();
+op_math_floor:   op_math_floor(vm, inst);   NEXT();
+op_math_ceil:    op_math_ceil(vm, inst);    NEXT();
 
-			case OP_EQ:
-			case OP_NEQ:
-			case OP_GT:
-			case OP_LT:
-			case OP_GTE:
-			case OP_LTE:
-						   op_cmp(vm, inst);
-						   break;
+halt:
+				 return;
 
-			case OP_AND: op_and(vm, inst); break;
-			case OP_OR:  op_or(vm, inst); break;
-			case OP_NOT: op_not(vm, inst); break;
-
-			case OP_JMP:       op_jmp(vm, inst); break;
-			case OP_JMP_FALSE: op_jmp_false(vm, inst); break;
-			case OP_JEQ:       op_jeq(vm, inst); break;
-
-			case OP_JNE:       op_jne(vm, inst); break;
-			case OP_JGT:       op_jgt(vm, inst); break;
-			case OP_JLT:       op_jlt(vm, inst); break;
-
-			case OP_LOAD_FUNC: op_load_func(vm, inst); break;
-
-			case OP_CALL:      op_call(vm, inst); break;
-			case OP_RET:       op_ret(vm, inst); break;
-
-			case OP_MAKE_ARRAY: op_make_array(vm, inst); break;
-			case OP_ARRAY_GET:  op_array_get(vm, inst); break;
-			case OP_ARRAY_SET:  op_array_set(vm, inst); break;
-			case OP_IN:         op_in(vm, inst); break;
-
-			case OP_IO_WRITE:   op_io_write(vm, inst); break;
-			case OP_IO_WRITELN: op_io_writeln(vm, inst); break;
-			case OP_IO_READ:    op_io_read(vm, inst); break;
-
-			case OP_STR_LEN:    op_str_len(vm, inst); break;
-			case OP_STR_CONCAT: op_str_concat(vm, inst); break;
-			case OP_STR_SLICE:  op_str_slice(vm, inst); break;
-			case OP_STR_FIND:   op_str_find(vm, inst); break;
-			case OP_STR_UPPER:  op_str_upper(vm, inst); break;
-			case OP_STR_LOWER:  op_str_lower(vm, inst); break;
-
-			case OP_MATH_POW:   op_math_pow(vm, inst); break;
-			case OP_MATH_SQRT:  op_math_sqrt(vm, inst); break;
-			case OP_MATH_ABS:   op_math_abs(vm, inst); break;
-			case OP_MATH_MIN:   op_math_min(vm, inst); break;
-			case OP_MATH_MAX:   op_math_max(vm, inst); break;
-			case OP_MATH_FLOOR: op_math_floor(vm, inst); break;
-			case OP_MATH_CEIL:  op_math_ceil(vm, inst); break;
-
-			case OP_HALT:
-								op_halt(vm, inst);
-								return;
-			case OP_BREAK:
-								op_jmp(vm, inst);
-								break;
-			default:
-								{
-									char buf[64];
-									snprintf(buf, sizeof(buf), "unhandled opcode: %d", inst->op);
-									vm_error(buf);
-								}
-		}
-	}
+#undef NEXT
 }
 
 /// @brief Free the VM
@@ -841,7 +883,8 @@ void vm_free(vm_t *vm)
 {
 	for (int i = 0; i < vm->stack_top; i++)
 		vm_val_release(&vm->stack[i]);
-	for (int i = 0; i < vm->global_count; i++) {
+	for (int i = 0; i < VM_GLOBALS_CAP; i++) {
+		if (!vm->globals[i].occupied) continue;
 		vm_val_release(&vm->globals[i].val);
 		free((char *)vm->globals[i].key);
 	}

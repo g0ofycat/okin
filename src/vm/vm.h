@@ -38,7 +38,13 @@ typedef struct {
 	const char *key;
 	size_t      key_len;
 	vm_val_t    val;
+	int         occupied;
 } global_entry_t;
+
+typedef struct {
+	global_entry_t slots[VM_GLOBALS_CAP];
+	int            count;
+} globals_t;
 
 typedef struct {
 	vm_val_t       stack[VM_STACK_MAX];

@@ -46,6 +46,7 @@ static void BM_okin_vm(benchmark::State &state, const char *code) {
 #endif
 
 int main(int argc, char** argv) {
+	benchmark::MaybeReenterWithoutASLR(argc, argv);
 	benchmark::Initialize(&argc, argv);
 	if (argc < 2) return 1;
 

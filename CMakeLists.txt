@@ -47,9 +47,15 @@ if(USE_VM)
 endif()
 
 add_executable(okin core/core.cpp)
+target_compile_options(okin PRIVATE -O3 -march=native -funroll-loops -fomit-frame-pointer -flto)
+target_link_options(okin PRIVATE -flto)
+
 target_link_libraries(okin PRIVATE okin_lib)
 
 add_executable(okin_bench core/core.cpp)
+target_compile_options(okin_bench PRIVATE -O3 -march=native -funroll-loops -fomit-frame-pointer -flto)
+target_link_options(okin_bench PRIVATE -flto -static-libgcc -static-libstdc++)
+
 target_compile_definitions(okin_bench PRIVATE USE_BENCHMARK BENCHMARK_STATIC_DEFINE)
 target_link_libraries(okin_bench PRIVATE okin_lib benchmark::benchmark pthread)
 target_link_options(okin_bench PRIVATE -static-libgcc -static-libstdc++)
