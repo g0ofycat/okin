@@ -127,7 +127,7 @@ static void compile_var(compiler_t *c, const okin_node_t *node)
 {
 	compile_node(c, node->args[1]);
 
-	if (c->scope->depth == 0) {
+	if (c->current_scope == c->root) {
 		chunk_emit(c->current_scope, OP_STORE_GLOBAL,
 				chunk_add_const(c->current_scope,
 					vm_val_str(node->args[0]->val_start, node->args[0]->val_len)));
@@ -272,9 +272,6 @@ static void compile_call(compiler_t *c, const okin_node_t *node, int as_expr)
 	int has_dest  = !as_expr && (argc > 1 && node->args[argc - 1]->tok == TK_VALUE);
 	int arg_count = has_dest ? argc - 2 : argc - 1;
 
-	for (int i = 1; i <= arg_count; i++)
-		compile_node(c, node->args[i]);
-
 	const char *name = node->args[0]->val_start;
 	size_t      len  = node->args[0]->val_len;
 	int fn_idx = resolve_func(c, name, len);
@@ -282,6 +279,9 @@ static void compile_call(compiler_t *c, const okin_node_t *node, int as_expr)
 		chunk_emit(c->current_scope, OP_LOAD_FUNC, fn_idx);
 	else
 		load_name(c, name, len);
+
+	for (int i = 1; i <= arg_count; i++)
+		compile_node(c, node->args[i]);
 
 	chunk_emit(c->current_scope, OP_CALL, arg_count);
 
@@ -446,12 +446,12 @@ static void compile_function(compiler_t *c, const okin_node_t *node)
 		return;
 	}
 
-	chunk_t  *fn_chunk    = c->root->sub_chunks[sub_idx];
-	chunk_t  *parent      = c->current_scope;
+	chunk_t  *fn_chunk     = c->root->sub_chunks[sub_idx];
+	chunk_t  *parent       = c->current_scope;
 	scope_t  *parent_scope = c->scope;
 
 	c->current_scope = fn_chunk;
-	c->scope         = scope_init();
+	c->scope         = scope_init(parent_scope);
 	scope_begin(c->scope);
 
 	for (int i = 1; i < node->argc; i++) {
@@ -672,7 +672,7 @@ compiler_t *compiler_init(const parser_t *parser)
 	c->parser      = parser;
 	c->root        = chunk_init("__main__");
 	c->current_scope = c->root;
-	c->scope       = scope_init();
+	c->scope       = scope_init(NULL);
 	return c;
 }
 

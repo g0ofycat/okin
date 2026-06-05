@@ -70,8 +70,7 @@ Define with opcode 16 (FUNCTION), invoke with opcode 17 (CALL), return with opco
   2<RESULT, 0>;16<ADD_ONE, N|2<R, 0>;64<N, 1, R>;18<R>>;17<ADD_ONE, 5, RESULT>
 
 2.8: Global variables
-Use opcode 4 (GLOBAL) inside a function to mark a var as writable from inner scope:
-  2<X, 0>;16<INC|4<X>;64<X, 1, X>>;17<INC>;192~WRITELN<X>     -- X is 1 after call
+Use opcode 4 (GLOBAL) inside a function to mark a variable as writable from inner scope
 
 2.9: Arrays
 RULE: Arrays are always declared using VAR (opcode 2) with opcode 48 nested inside.
@@ -88,7 +87,7 @@ CORRECT:
 
 2.10: Strings
 Use '\' to escape quotes inside string literals:
-  2<STR, "Hello, World!">
+  2<STR, \"Hello, World!\">
 
 2.11: String library
 Use opcode 208 (STRING) with a method. Result always goes into a pre-declared DEST variable.

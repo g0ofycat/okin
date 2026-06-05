@@ -31,7 +31,9 @@ typedef struct {
 	size_t      name_len;
 } global_t;
 
-typedef struct {
+typedef struct scope_t {
+	struct scope_t *parent;
+
 	local_t  locals[MAX_LOCALS];
 	int      local_count;
 	int      depth;
@@ -44,8 +46,9 @@ typedef struct {
 // ======================
 
 /// @brief Initialize a new scope
+/// @param parent: Optional parent
 /// @return scope_t*
-scope_t *scope_init(void);
+scope_t *scope_init(scope_t *parent);
 
 /// @brief Free the given scope
 /// @param s

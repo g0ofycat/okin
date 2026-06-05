@@ -75,7 +75,6 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;
 	bool has_dest   = arg_count > param_count;
-	int val_count   = has_dest ? arg_count - 1 : arg_count;
 
 	for (int i = 0; i < param_count && i < arg_count; i++) {
 		std::string_view param_name = tok_name(fn->args[i + 1]);

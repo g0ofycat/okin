@@ -8,10 +8,12 @@
 // ======================
 
 /// @brief Initialize a new scope
+/// @param parent: Optional parent
 /// @return scope_t*
-scope_t *scope_init(void)
+scope_t *scope_init(scope_t *parent)
 {
 	scope_t *s = calloc(1, sizeof(scope_t));
+	s->parent = parent;
 	return s;
 }
 
@@ -49,10 +51,14 @@ int scope_declare(scope_t *s, const char *name, size_t len)
 /// @return Slot Index, or -1 if not found or forced-global
 int scope_resolve(const scope_t *s, const char *name, size_t len)
 {
-	for (int i = 0; i < s->global_count; i++) {
-		const global_t *g = &s->globals[i];
-		if (g->name_len == len && memcmp(g->name, name, len) == 0)
-			return -1;
+	const scope_t *curr = s;
+	while (curr) {
+		for (int i = 0; i < curr->global_count; i++) {
+			const global_t *g = &curr->globals[i];
+			if (g->name_len == len && memcmp(g->name, name, len) == 0)
+				return -1;
+		}
+		curr = curr->parent;
 	}
 	for (int i = s->local_count - 1; i >= 0; i--) {
 		const local_t *l = &s->locals[i];

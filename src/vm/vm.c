@@ -238,7 +238,7 @@ static void op_pop(vm_t *vm, const instruction_t *inst)
 /// @param inst: Instruction (op selects operation)
 static void op_arith(vm_t *vm, const instruction_t *inst)
 {
-	vm_val_t a = POP(), b = POP();
+	vm_val_t b = POP(), a = POP();
 	int both_int = (a.type == VM_INT && b.type == VM_INT);
 
 	if (inst->op == OP_MOD) {
@@ -416,12 +416,14 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 	int arg_count = inst->a;
 	if (vm->stack_top < arg_count + 1) vm_error("stack underflow in call");
 
-	vm_val_t callee = vm->stack[vm->stack_top - 1];
+	int stack_base = vm->stack_top - arg_count - 1;
+	vm_val_t callee = vm->stack[stack_base];
 
 	if (callee.type != VM_INT) vm_error("call on non-function");
 	if (vm->frame_count >= VM_CALL_STACK_MAX) vm_error("call stack overflow");
 
-	chunk_t *fn_chunk = current_chunk(vm)->sub_chunks[callee.i];
+	chunk_t *fn_chunk = vm->frames[0].chunk->sub_chunks[callee.i];
+	if (!fn_chunk) vm_error("attempted to call an undefined function chunk");
 
 	int return_ip = CURRENT_FRAME()->local_ip;
 
@@ -429,13 +431,13 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 	frame->chunk      = fn_chunk;
 	frame->return_ip  = return_ip;
 	frame->local_ip   = 0;
-	frame->stack_base = vm->stack_top - arg_count - 1;
-	frame->max_local  = arg_count > 0 ? arg_count - 1 : 0;
+	frame->stack_base = stack_base;
+	frame->max_local  = arg_count > 0 ? arg_count : 0;
 
 	memset(frame->locals, 0, sizeof(frame->locals));
 
 	for (int i = 0; i < arg_count; i++) {
-		frame->locals[i] = vm->stack[frame->stack_base + i];
+		frame->locals[i] = vm->stack[frame->stack_base + 1 + i];
 		vm_val_retain(&frame->locals[i]);
 	}
 
