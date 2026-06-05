@@ -89,17 +89,14 @@ int main(int argc, char** argv) {
 
 	lexer_t* lex = lexer_init(src);
 	lexer_run(lex);
-	lexer_print(lex);
 	parser_t* parse = parser_init(lex);
 	parser_run(parse);
-	parser_print(parse);
 
 #ifdef USE_VM
 	if (use_vm) {
 		compiler_t* c = compiler_init(parse);
 		compiler_run(c);
 		vm_t* vm = vm_init(c->root);
-		chunk_print(c->root);
 		vm_run(vm);
 		vm_free(vm);
 		compiler_free(c);
