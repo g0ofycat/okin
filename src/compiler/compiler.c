@@ -335,15 +335,17 @@ static void compile_while(compiler_t *c, const okin_node_t *node)
 	int loop_start = c->current_scope->code_len;
 	compile_node(c, node->args[0]);
 
+	scope_begin(c->scope);
+
 	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
 	int incoming_break_start = c->break_count;
 
-	scope_begin(c->scope);
 	compile_body(c, node->body, node->body_len);
 
-	scope_end(c->scope);
 	chunk_emit(c->current_scope, OP_JMP, loop_start);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
+
+	scope_end(c->scope);
 
 	for (int i = incoming_break_start; i < c->break_count; i++)
 		chunk_patch(c->current_scope, c->break_patches[i], c->current_scope->code_len);
@@ -357,6 +359,8 @@ static void compile_while(compiler_t *c, const okin_node_t *node)
 static void compile_for(compiler_t *c, const okin_node_t *node)
 {
 	compile_node(c, node->args[1]);
+
+	scope_begin(c->scope);
 
 	int slot = scope_declare(c->scope, node->args[0]->val_start, node->args[0]->val_len);
 	if (slot == -1) { compiler_error(c, "too many locals"); return; }
@@ -373,16 +377,16 @@ static void compile_for(compiler_t *c, const okin_node_t *node)
 
 	int jf = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
 
-	scope_begin(c->scope);
 	compile_body(c, node->body, node->body_len);
 
-	scope_end(c->scope);
 	chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot);
 	compile_node(c, node->args[3]);
 	chunk_emit(c->current_scope, OP_ADD, 0);
 	chunk_emit(c->current_scope, OP_STORE_LOCAL, slot);
 	chunk_emit(c->current_scope, OP_JMP, loop_start);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
+
+	scope_end(c->scope);
 
 	for (int i = incoming_break_start; i < c->break_count; i++)
 		chunk_patch(c->current_scope, c->break_patches[i], c->current_scope->code_len);
