@@ -50,7 +50,6 @@ Use opcode 112 (IF) with a comparison opcode as the condition
   2<X, 5>;112<83<X, 10>|192~WRITELN<"X is less">>      -- if X < 10
 
 You can also chain 113 (ELIF) and 114 (ELSE), ONLY before a 112 (IF). 114 CANNOT have any conditionals in the next line, since ELSE implies that no other conditions in the chain can run after it
-  2<X, 10>;112<80<X, 10>|192~WRITELN<"X is 10">>;113<80<X, 20>|192~WRITELN<"X is 20">>;114<192~WRITELN<"X isn't 10 or 20">>
 
 2.6: Loops
 FOR (32) takes <NAME, START, END, STEP> with a logic block. END is exclusive.
