@@ -24,7 +24,13 @@ static void compiler_error(compiler_t *c, const char *msg)
 static void load_name(compiler_t *c, const char *name, size_t len)
 {
 	int slot = scope_resolve(c->scope, name, len);
-	if (slot != -1) { chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot); return; }
+	if (slot >= 0) { chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot); return; }
+	if (slot == SCOPE_NOT_FOUND && c->current_scope != c->root) {
+		char msg[256];
+		snprintf(msg, sizeof(msg), "undefined variable '%.*s'", (int)len, name);
+		compiler_error(c, msg);
+		return;
+	}
 	chunk_emit(c->current_scope, OP_LOAD_GLOBAL, chunk_add_const(c->current_scope, vm_val_str(name, len)));
 }
 
@@ -35,7 +41,13 @@ static void load_name(compiler_t *c, const char *name, size_t len)
 static void store_name(compiler_t *c, const char *name, size_t len)
 {
 	int slot = scope_resolve(c->scope, name, len);
-	if (slot != -1) { chunk_emit(c->current_scope, OP_STORE_LOCAL, slot); return; }
+	if (slot >= 0) { chunk_emit(c->current_scope, OP_STORE_LOCAL, slot); return; }
+	if (slot == SCOPE_NOT_FOUND && c->current_scope != c->root) {
+		char msg[256];
+		snprintf(msg, sizeof(msg), "undefined variable '%.*s'", (int)len, name);
+		compiler_error(c, msg);
+		return;
+	}
 	chunk_emit(c->current_scope, OP_STORE_GLOBAL, chunk_add_const(c->current_scope, vm_val_str(name, len)));
 }
 

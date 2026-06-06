@@ -56,7 +56,7 @@ int scope_resolve(const scope_t *s, const char *name, size_t len)
 		for (int i = 0; i < curr->global_count; i++) {
 			const global_t *g = &curr->globals[i];
 			if (g->name_len == len && memcmp(g->name, name, len) == 0)
-				return -1;
+				return SCOPE_FORCED_GLOBAL;
 		}
 		curr = curr->parent;
 	}
@@ -65,7 +65,7 @@ int scope_resolve(const scope_t *s, const char *name, size_t len)
 		if (l->name_len == len && memcmp(l->name, name, len) == 0)
 			return l->slot;
 	}
-	return -1;
+	return SCOPE_NOT_FOUND;
 }
 
 /// @brief Mark a name as forced-global in the current scope

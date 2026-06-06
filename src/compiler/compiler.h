@@ -14,7 +14,7 @@ extern "C" {
 // -- CONSTS
 // ======================
 
-#define MAX_FUNCTIONS 256
+#define MAX_FUNCTIONS     256
 #define MAX_BREAK_PATCHES 64
 
 // ======================

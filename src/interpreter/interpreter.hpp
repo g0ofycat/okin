@@ -139,7 +139,11 @@ inline double to_double(const okin_val_t &v)
 
 class enviroment {
 	public:
-		enviroment *parent;
+		enviroment(enviroment *parent, enviroment *globals_env = nullptr)
+			: parent(parent), globals_env(globals_env) {}
+
+		enviroment *parent      = nullptr;
+		enviroment *globals_env = nullptr;
 		std::unordered_map<std::string_view, okin_val_t> vars;
 		std::unordered_map<std::string_view, bool>       globals;
 
@@ -165,6 +169,10 @@ class enviroment {
 		/// @brief Mark variable as global
 		/// @param name
 		void mark_global(const std::string_view &name);
+
+		/// @brief Check if the current scope is global
+		/// @return bool
+		bool is_global_scope() const;
 };
 
 // ======================

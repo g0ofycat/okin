@@ -70,7 +70,7 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 		runtime_error("call to undefined function '" + std::string(name) + "'");
 
 	const okin_node_t *fn = it->second;
-	auto fn_env = std::make_unique<enviroment>(global_env);
+	auto fn_env = std::make_unique<enviroment>(nullptr, global_env);
 
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;
@@ -120,7 +120,7 @@ void interpreter::exec_for(const okin_node_t *node, enviroment *env)
 
 	if (step == 0) runtime_error("FOR step cannot be zero");
 
-	auto loop_env = std::make_unique<enviroment>(env);
+	auto loop_env = std::make_unique<enviroment>(env, nullptr);
 	try
 	{
 		for (int64_t i = start; i < end; i += step)
@@ -138,7 +138,7 @@ void interpreter::exec_for(const okin_node_t *node, enviroment *env)
 /// @param env
 void interpreter::exec_while(const okin_node_t *node, enviroment *env)
 {
-	auto loop_env = std::make_unique<enviroment>(env);
+	auto loop_env = std::make_unique<enviroment>(env, nullptr);
 	try
 	{
 		while (val_to_bool(eval(node->args[0], loop_env.get())))
@@ -251,7 +251,7 @@ void interpreter::exec_if(const okin_node_t *node, enviroment *env)
 	bool taken = val_to_bool(eval(node->args[0], env));
 	branch_stack.push_back(taken);
 	if (taken) {
-		auto if_env = std::make_unique<enviroment>(env);
+		auto if_env = std::make_unique<enviroment>(env, nullptr);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, if_env.get());
 		else
@@ -267,7 +267,7 @@ void interpreter::exec_elif(const okin_node_t *node, enviroment *env)
 	if (branch_stack.empty()) runtime_error("ELIF/ELSE without preceding IF");
 	if (!branch_stack.back() && val_to_bool(eval(node->args[0], env))) {
 		branch_stack.back() = true;
-		auto elif_env = std::make_unique<enviroment>(env);
+		auto elif_env = std::make_unique<enviroment>(env, nullptr);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, elif_env.get());
 		else
@@ -282,7 +282,7 @@ void interpreter::exec_else(const okin_node_t *node, enviroment *env)
 {
 	if (branch_stack.empty()) runtime_error("ELIF/ELSE without preceding IF");
 	if (!branch_stack.back()) {
-		auto else_env = std::make_unique<enviroment>(env);
+		auto else_env = std::make_unique<enviroment>(env, nullptr);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, else_env.get());
 		else if (node->args[0])
@@ -587,7 +587,7 @@ okin_val_t interpreter::eval_call(const okin_node_t *node, enviroment *env)
 		runtime_error("call to undefined function '" + std::string(name) + "'");
 
 	const okin_node_t *fn = it->second;
-	auto fn_env = std::make_unique<enviroment>(global_env);
+	auto fn_env = std::make_unique<enviroment>(global_env, nullptr);
 
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;

@@ -35,9 +35,11 @@ static void BM_okin_vm(benchmark::State &state, const char *code) {
 		parser_run(parse);
 		compiler_t* c = compiler_init(parse);
 		compiler_run(c);
-		vm_t* vm = vm_init(c->root);
-		vm_run(vm);
-		vm_free(vm);
+		if (!c->errors) {
+			vm_t* vm = vm_init(c->root);
+			vm_run(vm);
+			vm_free(vm);
+		}
 		compiler_free(c);
 		parser_free(parse);
 		lexer_free(lex);
@@ -96,6 +98,12 @@ int main(int argc, char** argv) {
 	if (use_vm) {
 		compiler_t* c = compiler_init(parse);
 		compiler_run(c);
+		if (c->errors) {
+			compiler_free(c);
+			parser_free(parse);
+			lexer_free(lex);
+			return 1;
+		}
 		vm_t* vm = vm_init(c->root);
 		vm_run(vm);
 		vm_free(vm);

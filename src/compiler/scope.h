@@ -11,6 +11,9 @@ extern "C" {
 // -- CONSTS
 // ======================
 
+#define SCOPE_FORCED_GLOBAL   -1
+#define SCOPE_NOT_FOUND       -2
+
 #define MAX_LOCALS      256
 #define MAX_SCOPE_DEPTH 64
 #define MAX_GLOBALS     256

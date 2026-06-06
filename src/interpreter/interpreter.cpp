@@ -76,6 +76,7 @@ okin_val_t *enviroment::get(const std::string_view &name) {
 	auto it = vars.find(name);
 	if (it != vars.end()) return &it->second;
 	if (parent) return parent->get(name);
+	if (globals.count(name) && globals_env) return globals_env->get(name);
 	return nullptr;
 };
 
@@ -85,18 +86,9 @@ okin_val_t *enviroment::get(const std::string_view &name) {
 void enviroment::set(const std::string_view &name, const okin_val_t &val)
 {
 	auto it = vars.find(name);
-	if (it != vars.end())
-	{
-		it->second = val;
-		return;
-	}
-
-	if (parent && parent->get(name))
-	{
-		parent->set(name, val);
-		return;
-	}
-
+	if (it != vars.end()) { it->second = val; return; }
+	if (parent && parent->get(name)) { parent->set(name, val); return; }
+	if (globals.count(name) && globals_env) { globals_env->set(name, val); return; }
 	vars[name] = val;
 }
 
@@ -115,6 +107,11 @@ void enviroment::mark_global(const std::string_view &name)
 	globals[name] = true;
 }
 
+
+/// @brief Check if the current scope is global
+/// @return bool
+bool enviroment::is_global_scope() const { return parent == nullptr && globals_env == nullptr; };
+
 // ======================
 // -- interpreter
 // ======================
@@ -123,7 +120,7 @@ void enviroment::mark_global(const std::string_view &name)
 /// @param parser
 interpreter::interpreter(const parser_t *parser) :
 	program(parser->program),
-	global_env(new enviroment(nullptr)),
+	global_env(new enviroment(nullptr, nullptr)),
 	ip(0)
 {
 	static bool initialized = false;
