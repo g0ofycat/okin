@@ -11,6 +11,13 @@ extern "C" {
 #include "scope.h"
 
 // ======================
+// -- MACROS
+// ======================
+
+#define NAME_EQ(e, name, len) \
+	((e)->name_len == (len) && memcmp((e)->name, (name), (len)) == 0)
+
+// ======================
 // -- CONSTS
 // ======================
 
@@ -36,15 +43,9 @@ typedef struct {
 } compiler_label_entry_t;
 
 typedef struct {
-	int         bc_pos;
-	const char *name;
-	size_t      name_len;
-} label_patch_t;
-
-typedef struct {
 	compiler_label_entry_t labels[MAX_LABELS];
+	compiler_label_entry_t patches[MAX_LABEL_PATCHES];
 	int           label_count;
-	label_patch_t patches[MAX_LABEL_PATCHES];
 	int           patch_count;
 } label_table_t;
 

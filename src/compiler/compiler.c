@@ -113,11 +113,9 @@ static void lt_init(label_table_t *lt)
 /// @return int: Bytecode position, or -1 if not yet defined
 static int lt_resolve(const label_table_t *lt, const char *name, size_t len)
 {
-	for (int i = 0; i < lt->label_count; i++) {
-		const compiler_label_entry_t *e = &lt->labels[i];
-		if (e->name_len == len && memcmp(e->name, name, len) == 0)
-			return e->bc_pos;
-	}
+	for (int i = 0; i < lt->label_count; i++)
+		if (NAME_EQ(&lt->labels[i], name, len))
+			return lt->labels[i].bc_pos;
 	return -1;
 }
 
@@ -129,7 +127,7 @@ static int lt_resolve(const label_table_t *lt, const char *name, size_t len)
 static void lt_add_patch(label_table_t *lt, int bc_pos, const char *name, size_t len)
 {
 	if (lt->patch_count >= MAX_LABEL_PATCHES) return;
-	lt->patches[lt->patch_count++] = (label_patch_t){ bc_pos, name, len };
+	lt->patches[lt->patch_count++] = (compiler_label_entry_t){ name, len, bc_pos };
 }
 
 /// @brief Define a label and flush any forward patches waiting for it
@@ -140,20 +138,18 @@ static void lt_add_patch(label_table_t *lt, int bc_pos, const char *name, size_t
 /// @param bc_pos: Bytecode position the label maps to
 static void lt_define(label_table_t *lt, chunk_t *chunk, const char *name, size_t len, int bc_pos)
 {
-	for (int i = 0; i < lt->label_count; i++) {
-		compiler_label_entry_t *e = &lt->labels[i];
-		if (e->name_len == len && memcmp(e->name, name, len) == 0) {
-			e->bc_pos = bc_pos; goto flush;
-		}
-	}
+	compiler_label_entry_t *found = NULL;
+	for (int i = 0; i < lt->label_count; i++)
+		if (NAME_EQ(&lt->labels[i], name, len)) { found = &lt->labels[i]; break; }
 
-	if (lt->label_count < MAX_LABELS)
+	if (found)
+		found->bc_pos = bc_pos;
+	else if (lt->label_count < MAX_LABELS)
 		lt->labels[lt->label_count++] = (compiler_label_entry_t){ name, len, bc_pos };
 
-flush:
 	for (int i = 0; i < lt->patch_count; ) {
-		label_patch_t *p = &lt->patches[i];
-		if (p->name_len == len && memcmp(p->name, name, len) == 0) {
+		compiler_label_entry_t *p = &lt->patches[i];
+		if (NAME_EQ(p, name, len)) {
 			chunk_patch(chunk, p->bc_pos, bc_pos);
 			lt->patches[i] = lt->patches[--lt->patch_count];
 		} else { i++; }
@@ -481,9 +477,9 @@ static void compile_for(compiler_t *c, const okin_node_t *node)
 /// @param node: LABEL node - args: NAME
 static void compile_label(compiler_t *c, const okin_node_t *node)
 {
-	const char *name = node->args[0]->val_start;
-	size_t      len  = node->args[0]->val_len;
-	lt_define(&c->labels, c->current_scope, name, len, c->current_scope->code_len);
+	lt_define(&c->labels, c->current_scope,
+			node->args[0]->val_start, node->args[0]->val_len,
+			c->current_scope->code_len);
 }
 
 /// @brief Emit a jump to a named label, backpatching if forward
@@ -495,8 +491,7 @@ static void emit_jmp_to_label(compiler_t *c, int opcode, const char *name, size_
 {
 	int target = lt_resolve(&c->labels, name, len);
 	if (target >= 0) { chunk_emit(c->current_scope, opcode, target); return; }
-	int bc_pos = chunk_emit(c->current_scope, opcode, 0);
-	lt_add_patch(&c->labels, bc_pos, name, len);
+	lt_add_patch(&c->labels, chunk_emit(c->current_scope, opcode, 0), name, len);
 }
 
 /// @brief Compile jump instructions
@@ -508,17 +503,15 @@ static void compile_jmp(compiler_t *c, const okin_node_t *node)
 		emit_jmp_to_label(c, OP_JMP, node->args[0]->val_start, node->args[0]->val_len);
 		return;
 	}
+
+	static const int vm_op[] = {
+		[JEQ] = OP_JEQ, [JNE] = OP_JNE,
+		[JGT] = OP_JGT, [JLT] = OP_JLT,
+	};
+
 	compile_node(c, node->args[0]);
 	compile_node(c, node->args[1]);
-	int vm_op;
-	switch (node->opcode) {
-		case JEQ: vm_op = OP_JEQ; break;
-		case JNE: vm_op = OP_JNE; break;
-		case JGT: vm_op = OP_JGT; break;
-		case JLT: vm_op = OP_JLT; break;
-		default:  vm_op = OP_JMP; break;
-	}
-	emit_jmp_to_label(c, vm_op, node->args[2]->val_start, node->args[2]->val_len);
+	emit_jmp_to_label(c, vm_op[node->opcode], node->args[2]->val_start, node->args[2]->val_len);
 }
 
 // ======================
