@@ -80,10 +80,13 @@ int main(int argc, char** argv) {
 	if (argc < 2) return 1;
 
 	bool use_vm = false;
+	bool debug = false;
+
 	const char *src = nullptr;
 
 	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-vm") == 0) use_vm = true;
+		if (strcmp(argv[i], "-vm") == 0)     use_vm = true;
+		else if (strcmp(argv[i], "-d") == 0) debug  = true;
 		else src = argv[i];
 	}
 
@@ -91,13 +94,16 @@ int main(int argc, char** argv) {
 
 	lexer_t* lex = lexer_init(src);
 	lexer_run(lex);
+	if (debug) lexer_print(lex);
 	parser_t* parse = parser_init(lex);
 	parser_run(parse);
+	if (debug) parser_print(parse);
 
 #ifdef USE_VM
 	if (use_vm) {
 		compiler_t* c = compiler_init(parse);
 		compiler_run(c);
+		if (debug) chunk_print(c->root);
 		if (c->errors) {
 			compiler_free(c);
 			parser_free(parse);
