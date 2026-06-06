@@ -665,7 +665,12 @@ static void compile_node(compiler_t *c, const okin_node_t *node)
 	if (node->opcode == CALL)             { compile_call(c, node, 1); return; }
 
 	compile_fn fn = COMPILE_TABLE[node->opcode];
-	if (!fn) { compiler_error(c, "unknown opcode"); return; }
+	if (!fn) {
+		char msg[256];
+		snprintf(msg, sizeof(msg), "unknown opcode 0x%d", node->opcode);
+		compiler_error(c, msg);
+		return;
+	}
 	fn(c, node);
 }
 
