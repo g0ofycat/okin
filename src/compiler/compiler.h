@@ -14,8 +14,11 @@ extern "C" {
 // -- CONSTS
 // ======================
 
-#define MAX_FUNCTIONS     256
-#define MAX_BREAK_PATCHES 64
+#define MAX_FUNCTIONS      256
+#define MAX_BREAK_PATCHES  64
+
+#define MAX_LABELS         256
+#define MAX_LABEL_PATCHES  (MAX_LABELS * 4)
 
 // ======================
 // -- CLASSES & STRUCTS
@@ -29,6 +32,25 @@ typedef struct {
 typedef struct {
 	const char *name;
 	size_t      name_len;
+	int         bc_pos;
+} compiler_label_entry_t;
+
+typedef struct {
+	int         bc_pos;
+	const char *name;
+	size_t      name_len;
+} label_patch_t;
+
+typedef struct {
+	compiler_label_entry_t labels[MAX_LABELS];
+	int           label_count;
+	label_patch_t patches[MAX_LABEL_PATCHES];
+	int           patch_count;
+} label_table_t;
+
+typedef struct {
+	const char *name;
+	size_t      name_len;
 	int         index;
 } func_entry_t;
 
@@ -38,10 +60,10 @@ typedef struct {
 	chunk_t        *current_scope;
 	scope_t        *scope;
 	func_entry_t    functions[MAX_FUNCTIONS];
+	label_table_t   labels;
 	int             func_count;
 	int             break_patches[MAX_BREAK_PATCHES];
 	int             break_count;
-
 	int             errors;
 } compiler_t;
 

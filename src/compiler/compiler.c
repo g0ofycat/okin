@@ -95,6 +95,72 @@ static inline int emit_optional_store(compiler_t *c, const okin_node_t *node, in
 }
 
 // ======================
+// -- LABEL TABLES
+// ======================
+
+/// @brief Zero out the table
+/// @param lt: Label table instance
+static void lt_init(label_table_t *lt)
+{
+	lt->label_count = 0;
+	lt->patch_count = 0;
+}
+
+/// @brief Resolve a label name to a bytecode position
+/// @param lt: Label table instance
+/// @param name: Label name
+/// @param len: Name length
+/// @return int: Bytecode position, or -1 if not yet defined
+static int lt_resolve(const label_table_t *lt, const char *name, size_t len)
+{
+	for (int i = 0; i < lt->label_count; i++) {
+		const compiler_label_entry_t *e = &lt->labels[i];
+		if (e->name_len == len && memcmp(e->name, name, len) == 0)
+			return e->bc_pos;
+	}
+	return -1;
+}
+
+/// @brief Record a forward jump that needs patching once its label is defined
+/// @param lt: Label table instance
+/// @param bc_pos: Instruction index to patch
+/// @param name: Label name
+/// @param len: Name length
+static void lt_add_patch(label_table_t *lt, int bc_pos, const char *name, size_t len)
+{
+	if (lt->patch_count >= MAX_LABEL_PATCHES) return;
+	lt->patches[lt->patch_count++] = (label_patch_t){ bc_pos, name, len };
+}
+
+/// @brief Define a label and flush any forward patches waiting for it
+/// @param lt: Label table instance
+/// @param chunk: Current chunk
+/// @param name: Label name
+/// @param len: Name length
+/// @param bc_pos: Bytecode position the label maps to
+static void lt_define(label_table_t *lt, chunk_t *chunk, const char *name, size_t len, int bc_pos)
+{
+	for (int i = 0; i < lt->label_count; i++) {
+		compiler_label_entry_t *e = &lt->labels[i];
+		if (e->name_len == len && memcmp(e->name, name, len) == 0) {
+			e->bc_pos = bc_pos; goto flush;
+		}
+	}
+
+	if (lt->label_count < MAX_LABELS)
+		lt->labels[lt->label_count++] = (compiler_label_entry_t){ name, len, bc_pos };
+
+flush:
+	for (int i = 0; i < lt->patch_count; ) {
+		label_patch_t *p = &lt->patches[i];
+		if (p->name_len == len && memcmp(p->name, name, len) == 0) {
+			chunk_patch(chunk, p->bc_pos, bc_pos);
+			lt->patches[i] = lt->patches[--lt->patch_count];
+		} else { i++; }
+	}
+}
+
+// ======================
 // -- FORWARD DECL
 // ======================
 
@@ -410,24 +476,49 @@ static void compile_for(compiler_t *c, const okin_node_t *node)
 // -- JUMPS
 // ======================
 
-/// @brief Compile jump instructions using parser-resolved label indices
+/// @brief Compile LABEL
 /// @param c: Compiler instance
-/// @param node: Jump node
+/// @param node: LABEL node - args: NAME
+static void compile_label(compiler_t *c, const okin_node_t *node)
+{
+	const char *name = node->args[0]->val_start;
+	size_t      len  = node->args[0]->val_len;
+	lt_define(&c->labels, c->current_scope, name, len, c->current_scope->code_len);
+}
+
+/// @brief Emit a jump to a named label, backpatching if forward
+/// @param c: Compiler instance
+/// @param opcode: VM jump opcode
+/// @param name: Label name
+/// @param len: Name length
+static void emit_jmp_to_label(compiler_t *c, int opcode, const char *name, size_t len)
+{
+	int target = lt_resolve(&c->labels, name, len);
+	if (target >= 0) { chunk_emit(c->current_scope, opcode, target); return; }
+	int bc_pos = chunk_emit(c->current_scope, opcode, 0);
+	lt_add_patch(&c->labels, bc_pos, name, len);
+}
+
+/// @brief Compile jump instructions
+/// @param c: Compiler instance
+/// @param node: Jump node - JMP args: LABEL | Jcc args: A, B, LABEL
 static void compile_jmp(compiler_t *c, const okin_node_t *node)
 {
 	if (node->opcode == JMP) {
-		chunk_emit(c->current_scope, OP_JMP, node->args[0]->jump_index);
+		emit_jmp_to_label(c, OP_JMP, node->args[0]->val_start, node->args[0]->val_len);
 		return;
 	}
 	compile_node(c, node->args[0]);
 	compile_node(c, node->args[1]);
-	int target = node->args[2]->jump_index;
+	int vm_op;
 	switch (node->opcode) {
-		case JEQ: chunk_emit(c->current_scope, OP_JEQ, target); break;
-		case JNE: chunk_emit(c->current_scope, OP_JNE, target); break;
-		case JGT: chunk_emit(c->current_scope, OP_JGT, target); break;
-		case JLT: chunk_emit(c->current_scope, OP_JLT, target); break;
+		case JEQ: vm_op = OP_JEQ; break;
+		case JNE: vm_op = OP_JNE; break;
+		case JGT: vm_op = OP_JGT; break;
+		case JLT: vm_op = OP_JLT; break;
+		default:  vm_op = OP_JMP; break;
 	}
+	emit_jmp_to_label(c, vm_op, node->args[2]->val_start, node->args[2]->val_len);
 }
 
 // ======================
@@ -656,9 +747,9 @@ static void init_compile_table(void)
 /// @param node: Node to compile
 static void compile_node(compiler_t *c, const okin_node_t *node)
 {
-	if (node->opcode == NODE_LEAF)        { compile_leaf(c, node); return; }
 	if (node->opcode == NODE_JUMP_TARGET) return;
-	if (node->opcode == LABEL)            return;
+	if (node->opcode == NODE_LEAF)        { compile_leaf(c, node); return; }
+	if (node->opcode == LABEL)            { compile_label(c, node); return; }
 	if (node->opcode == TRUE)             { chunk_emit(c->current_scope, OP_TRUE,  0); return; }
 	if (node->opcode == FALSE)            { chunk_emit(c->current_scope, OP_FALSE, 0); return; }
 	if (node->opcode == NIL)              { chunk_emit(c->current_scope, OP_NIL,   0); return; }
@@ -690,6 +781,9 @@ compiler_t *compiler_init(const parser_t *parser)
 	c->root        = chunk_init("__main__");
 	c->current_scope = c->root;
 	c->scope       = scope_init(NULL);
+
+	lt_init(&c->labels);
+
 	return c;
 }
 
