@@ -67,13 +67,13 @@ def save_dataset(results: list[dict], system_prompt: str = "", _: str = "") -> N
                 continue
 
             entry = {
-                "messages": [
-                    {"role": "system",    "content": system_prompt},
-                    {"role": "user",      "content": r["task"]},
-                    {"role": "assistant", "content": f"```okin\n{r['code']}\n```"},
-                ],
-                "okin_output": r["output"],
-            }
+                    "messages": [
+                        {"role": "system",    "content": system_prompt},
+                        {"role": "user",      "content": r["task"]},
+                        {"role": "assistant", "content": f"```okin\n{r['code']}\n```"},
+                        ],
+                    "okin_output": r["output"],
+                    }
 
             f.write(json.dumps(entry) + "\n")
 

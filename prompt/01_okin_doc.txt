@@ -22,6 +22,4 @@ Using Okin with smaller languages models enables a framework that allows for muc
 
 The output for Okin files theirselves are represented by opcodes that handle outputs of specific variables.
 
-The most important part of Okin are the limitations, which is mainly loops, conditions, and IO. Although, Okin has standard libraries that are specific opcodes. Library methods can be accessed using the "~" symbol. (e.x. <STD_LIB>~<METHOD><arg_v>).
-
 TL;DR - Okin is a bytecode-like language for LLM's to write token efficient code.

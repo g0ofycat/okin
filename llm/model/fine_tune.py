@@ -40,51 +40,51 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 # ======================
 
 model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID,
-    dtype=torch.float32,
-    device_map="cpu",
-    low_cpu_mem_usage=True,
-)
+        MODEL_ID,
+        dtype=torch.float32,
+        device_map="cpu",
+        low_cpu_mem_usage=True,
+        )
 
 lora_config = LoraConfig(
-    r=8,
-    lora_alpha=16,
-    target_modules=["q_proj", "v_proj"],
-    lora_dropout=0.05,
-    task_type="QUESTION_ANS",
-)
+        r=8,
+        lora_alpha=16,
+        target_modules=["q_proj", "v_proj"],
+        lora_dropout=0.05,
+        task_type="QUESTION_ANS",
+        )
 
 # ======================
 # -- TRAIN
 # ======================
 
 args = SFTConfig(
-    output_dir=OUTPUT_DIR,
-    gradient_checkpointing=True,
-    dataloader_pin_memory=False,
-    auto_find_batch_size=True,
-    assistant_only_loss=True,
-    fp16=True,
-    gradient_checkpointing_kwargs={"use_reentrant": False},
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=8,
-    num_train_epochs=3,
-    learning_rate=2e-4,
-    logging_steps=10,
-    save_strategy="epoch",
-    warmup_steps=10,
-    lr_scheduler_type="cosine",
-    max_length=256,
-    eos_token="<|im_end|>",
-)
+        output_dir=OUTPUT_DIR,
+        gradient_checkpointing=True,
+        dataloader_pin_memory=False,
+        auto_find_batch_size=True,
+        assistant_only_loss=True,
+        fp16=True,
+        gradient_checkpointing_kwargs={"use_reentrant": False},
+        per_device_train_batch_size=1,
+        gradient_accumulation_steps=8,
+        num_train_epochs=3,
+        learning_rate=2e-4,
+        logging_steps=10,
+        save_strategy="epoch",
+        warmup_steps=10,
+        lr_scheduler_type="cosine",
+        max_length=256,
+        eos_token="<|im_end|>",
+        )
 
 trainer = SFTTrainer(
-    model=model,
-    peft_config=lora_config,
-    processing_class=tokenizer,
-    args=args,
-    train_dataset=dataset,
-)
+        model=model,
+        peft_config=lora_config,
+        processing_class=tokenizer,
+        args=args,
+        train_dataset=dataset,
+        )
 
 trainer.train()
 

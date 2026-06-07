@@ -10,7 +10,7 @@ from openai.types.chat import ChatCompletionMessageParam
 # ======================
 
 BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OKIN_BIN        = os.path.join(BASE_DIR, "../build", "okin.exe")
+OKIN_BIN        = os.path.join(BASE_DIR, "../build", "okin")
 PROMPT_DIR      = os.path.join(BASE_DIR, "../prompt")
 ACTIVATION_FILE = os.path.join(PROMPT_DIR, "okin_activation.txt")
 
@@ -21,7 +21,7 @@ OUTPUT_FILE   = os.path.join(DATA_DIR, "llm_output.txt")
 # -- CONFIG
 # ======================
 
-LM_BASE_URL     = "http://localhost:1234/v1"
+LM_BASE_URL     = "http://192.168.12.202:1234/v1"
 LM_API_KEY      = "lm-studio"
 LM_MODEL        = "local-model"
 MAX_RETRIES     = 3
@@ -32,41 +32,50 @@ RECURSE_PROMPT  = 1
 # ======================
 
 INITIAL_PROMPT = (
-    "Write 10 Okin test cases.\n"
-    "Be creative and cover a wide range of features and edge cases.\n\n"
-    "CRITICAL RULES (violations will cause runtime errors):\n"
-    "- NO comments in your code\n"
-    "- INLINE MATH: Code like 'Y-1, X+1, Z*2' isn't valid, you must use the opcode for specific arithmetic operations\n"
-    "- ALL variables must be declared with opcode 2 BEFORE they are used\n"
-    "- WRONG: 64<X, Y, Z> before declaring Y and Z\n"
-    "- CORRECT: 2<X,10>;2<Y,5>;2<Z,0>;64<X,Y,Z>;192~WRITELN<Z>\n"
-    "- DEST in arithmetic (64-68), string (208~), math (224~) must be declared first\n"
-    "- FOR loops: all vars used inside the body must be declared before the loop\n"
-    "- WRONG: 32<I,0,5,1|64<SUM,I,SUM>> without declaring SUM first\n"
-    "- CORRECT: 2<SUM,0>;32<I,0,5,1|64<SUM,I,SUM>>;192~WRITELN<SUM>\n"
-    "- WHILE loops need a variable that changes inside the body or they loop forever\n"
-    "- Each test case must end with 192~WRITELN to print the result\n"
-    "- No duplicates, no similar test cases with only 1 value changed\n\n"
-    "Coverage requirements (at least 1 of each):\n"
-    "- Basic arithmetic: ADD, SUB, MUL, DIV, MOD\n"
-    "- FOR loop\n"
-    "- WHILE loop\n"
-    "- IF conditional\n"
-    "- String ops: LEN, CONCAT, SLICE, FIND, UPPER, or LOWER\n"
-    "- Array ops: AGET, ASET, or IN\n"
-    "- Math lib: POW, SQRT, ABS, MIN, MAX, FLOOR, or CEIL\n"
-    "- Function: FUNCTION + CALL\n\n"
-    "Format each test case like this:\n"
-    "TASK: <one sentence describing what the code does>\n"
-    "```okin\n"
-    "<code>\n"
-    "```\n"
-)
+        "Generate 10 Okin test cases covering diverse features and edge cases.\n"
+        "Each case must be unique and non-trivial.\n\n"
+        "SYNTAX & EXECUTION RULES (violations cause runtime errors):\n"
+        "1. Variables: Declare ALL vars with opcode 2 before use\n"
+        "   BAD:  64<X,Y,Z> (Y,Z not declared)\n"
+        "   GOOD: 2<X,10>;2<Y,5>;2<Z,0>;64<X,Y,Z>\n"
+        "2. DEST requirement: Arithmetic (64-68), STRING (208~), MATH (224~) need pre-declared DEST\n"
+        "3. No inline math: Can't write 'Y-1' or 'X*2' directly, must use opcodes\n"
+        "4. Loop variables: ALL vars used in loop body must exist before loop starts\n"
+        "   BAD:  32<I,0,5,1|64<SUM,I,SUM>> (SUM undefined)\n"
+        "   GOOD: 2<SUM,0>;32<I,0,5,1|64<SUM,I,SUM>>\n"
+        "5. WHILE safety: Variable must change each iteration or loop infinitely\n"
+        "6. No comments: Remove all -- comments from code\n"
+        "7. Output requirement: Every test case must end with 192~WRITELN to print result\n\n"
+        "REQUIRED COVERAGE (at least one example of each):\n"
+        "- Arithmetic ops: ADD(64), SUB(65), MUL(66), DIV(67), MOD(68)\n"
+        "- Control flow: FOR(32) loop, WHILE(33) loop, IF(112) conditional\n"
+        "- String lib: LEN, CONCAT, SLICE, FIND, UPPER, or LOWER\n"
+        "- Array ops: INDEX(50), SET_IDX(51), or IN(49) membership\n"
+        "- Math lib: POW, SQRT, ABS, MIN, MAX, FLOOR, or CEIL\n"
+        "- Functions: Define with FUNCTION(16), invoke with CALL(17)\n"
+        "- Comparisons: Use EQ(80), NEQ(81), GT(82), LT(83), GTE(84), LTE(85)\n\n"
+        "QUALITY STANDARDS:\n"
+        "- No duplicates or minor variations of the same logic\n"
+        "- Test cases should demonstrate realistic use patterns\n"
+        "- Avoid trivial operations (e.g., just printing a constant)\n"
+        "- Mix simple and complex examples\n\n"
+        "FORMAT FOR EACH TEST CASE:\n"
+        "TASK: [One sentence explaining what this code does]\n"
+        "```okin\n"
+        "[Code]\n"
+        "```\n"
+        )
 
 RECURSE_MSG = (
-    "Write 10 more Okin test cases, different from the ones above.\n"
-    "Output only the okin code block."
-)
+        "Generate 10 additional Okin test cases, completely different from previous ones.\n"
+        "Explore new feature combinations and edge cases not yet covered.\n"
+        "Follow all syntax rules from the original prompt.\n\n"
+        "OUTPUT FORMAT:\n"
+        "TASK: [Description]\n"
+        "```okin\n"
+        "[Code]\n"
+        "```\n"
+        )
 
 # ======================
 # -- SETUP
@@ -111,8 +120,8 @@ def fix_okin_block(code: str, error: str, messages: list[ChatCompletionMessagePa
             f"- DEST in arithmetic (64-68) must be pre-declared: 2<R, 0>;64<A, B, R>\n"
             f"- Write the entire fixed program as a single line\n"
             f"- Return only the corrected okin code block, nothing else"
-        )
-    }]
+            )
+        }]
 
     print("\n[retrying okin fix...]\n", flush=True)
 
@@ -222,6 +231,7 @@ def main():
 # ======================
 
 if __name__ == "__main__":
+    """
     system_prompt = load_prompts()
     os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -250,3 +260,5 @@ if __name__ == "__main__":
         f.write("\n\n".join(all_responses))
 
     print(f"\nWritten to {OUTPUT_FILE}")
+    """
+    main()
