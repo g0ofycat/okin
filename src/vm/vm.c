@@ -154,13 +154,16 @@ static void val_print(const vm_val_t *v)
 /// @param vm
 /// @return chunk_t
 static inline chunk_t *current_chunk(vm_t *vm) {
-	return vm->frame_count > 0 ? CURRENT_FRAME()->chunk : vm->chunk;
+	return __builtin_expect(vm->frame_count > 0, 1)
+		? vm->frames[vm->frame_count - 1].chunk
+		: vm->chunk;
 }
 
 /// @brief Push a constant from the pool onto the stack
 /// @param vm: VM instance
 /// @param inst: Instruction (a = constant index)
-static void op_load_const(vm_t *vm, const instruction_t *inst)
+	__attribute__((hot))
+static inline void op_load_const(vm_t *restrict vm, const instruction_t *restrict inst)
 {
 	vm_val_t v = current_chunk(vm)->constants[inst->a];
 	vm_val_retain(&v);
@@ -170,7 +173,8 @@ static void op_load_const(vm_t *vm, const instruction_t *inst)
 /// @brief Push a local variable (stack slot relative to frame base) onto the stack
 /// @param vm: VM instance
 /// @param inst: Instruction (a = slot index)
-static void op_load_local(vm_t *vm, const instruction_t *inst)
+	__attribute__((hot))
+static inline void op_load_local(vm_t *restrict vm, const instruction_t *restrict inst)
 {
 	vm_val_t v = CURRENT_FRAME()->locals[inst->a];
 	vm_val_retain(&v);
@@ -180,11 +184,13 @@ static void op_load_local(vm_t *vm, const instruction_t *inst)
 /// @brief Pop and store a value into a local slot
 /// @param vm: VM instance
 /// @param inst: Instruction (a = slot index)
-static void op_store_local(vm_t *vm, const instruction_t *inst)
+	__attribute__((hot))
+static inline void op_store_local(vm_t *restrict vm, const instruction_t *restrict inst)
 {
-	if (inst->a > CURRENT_FRAME()->max_local)
-		CURRENT_FRAME()->max_local = inst->a;
-	vm_val_t *slot = &CURRENT_FRAME()->locals[inst->a];
+	vm_call_frame_t *frame = CURRENT_FRAME();
+	uint32_t a = inst->a;
+	frame->max_local = a > frame->max_local ? a : frame->max_local;
+	vm_val_t *slot = &frame->locals[a];
 	vm_val_release(slot);
 	*slot = POP();
 }
@@ -192,12 +198,14 @@ static void op_store_local(vm_t *vm, const instruction_t *inst)
 /// @brief Load a global by name (constant pool holds the name string) onto the stack
 /// @param vm: VM instance
 /// @param inst: Instruction (a = constant index for name)
-static void op_load_global(vm_t *vm, const instruction_t *inst)
+	__attribute__((hot))
+static inline void op_load_global(vm_t *restrict vm, const instruction_t *restrict inst)
 {
 	vm_val_t *name = &current_chunk(vm)->constants[inst->a];
-	if (name->type != VM_STR || !name->str) vm_error("global lookup requires string identifier");
+	if (name->type != VM_STR || !name->str)
+		vm_error("global lookup requires string identifier");
 	vm_val_t *val = vm_get_global(vm, name->str->data, name->str->len);
-	vm_val_t  v   = val ? *val : vm_val_nil();
+	vm_val_t   v  = val ? *val : vm_val_nil();
 	vm_val_retain(&v);
 	PUSH(v);
 }
@@ -205,12 +213,13 @@ static void op_load_global(vm_t *vm, const instruction_t *inst)
 /// @brief Pop and store a value into a global by name
 /// @param vm: VM instance
 /// @param inst: Instruction (a = constant index for name)
-static void op_store_global(vm_t *vm, const instruction_t *inst)
+	__attribute__((hot))
+static inline void op_store_global(vm_t *restrict vm, const instruction_t *restrict inst)
 {
 	vm_val_t *name = &current_chunk(vm)->constants[inst->a];
-	if (name->type != VM_STR || !name->str) vm_error("global storage requires string identifier");
-	vm_val_t val = POP();
-	vm_set_global(vm, name->str->data, name->str->len, val);
+	if (name->type != VM_STR || !name->str)
+		vm_error("global storage requires string identifier");
+	vm_set_global(vm, name->str->data, name->str->len, POP());
 }
 
 // ======================
