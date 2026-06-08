@@ -1,22 +1,339 @@
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print the string Hello, World!"}, {"role": "assistant", "content": "```okin\n192~WRITELN<\"Hello, World!\">\n```"}], "okin_output": "Hello, World!"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print a variable with value 10"}, {"role": "assistant", "content": "```okin\n2<X, 10>;192~WRITELN<X>\n```"}], "okin_output": "10"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Add two numbers and print the result"}, {"role": "assistant", "content": "```okin\n2<X, 10>;2<Y, 5>;2<Z, 0>;64<X, Y, Z>;192~WRITELN<Z>\n```"}], "okin_output": "15"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Calculate 10 mod 3 and print the result"}, {"role": "assistant", "content": "```okin\n2<X, 10>;2<Y, 3>;2<R, 0>;68<X, Y, R>;192~WRITELN<R>\n```"}], "okin_output": "1"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print a message if X equals 10"}, {"role": "assistant", "content": "```okin\n2<X, 10>;112<80<X, 10>|192~WRITELN<\"X is 10\">>\n```"}], "okin_output": "X is 10"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print a message if X is greater than 10"}, {"role": "assistant", "content": "```okin\n2<X, 15>;112<82<X, 10>|192~WRITELN<\"X is greater\">>\n```"}], "okin_output": "X is greater"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print a message if X is less than 10"}, {"role": "assistant", "content": "```okin\n2<X, 5>;112<83<X, 10>|192~WRITELN<\"X is less\">>\n```"}], "okin_output": "X is less"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print numbers 0 to 4 using a FOR loop"}, {"role": "assistant", "content": "```okin\n32<I, 0, 5, 1|192~WRITELN<I>>\n```"}], "okin_output": "0\n1\n2\n3\n4"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Print numbers 0 to 9 using a WHILE loop"}, {"role": "assistant", "content": "```okin\n2<X, 0>;33<83<X, 10>|192~WRITELN<X>;64<X, 1, X>>\n```"}], "okin_output": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Define and call a function that prints Hello"}, {"role": "assistant", "content": "```okin\n16<GREET|192~WRITELN<\"Hello\">>;17<GREET>\n```"}], "okin_output": "Hello"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Define a function that adds 1 to its argument and print the result"}, {"role": "assistant", "content": "```okin\n2<RESULT, 0>;16<ADD_ONE, N|2<R, 0>;64<N, 1, R>;18<R>>;17<ADD_ONE, 5, RESULT>;192~WRITELN<RESULT>\n```"}], "okin_output": "6"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Modify a global variable inside a function and print it"}, {"role": "assistant", "content": "```okin\n2<X, 0>;16<INC|4<X>;64<X, 1, X>>;17<INC>;192~WRITELN<X>\n```"}], "okin_output": "1"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Access the first element of an array and print it"}, {"role": "assistant", "content": "```okin\n2<ARR, 48<1, 2, 3, 4, 5>>;2<FIRST, 0>;50<ARR, 0, FIRST>;192~WRITELN<FIRST>\n```"}], "okin_output": "1"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Check if 2 is in an array and print the result"}, {"role": "assistant", "content": "```okin\n2<ARR, 48<1, 2, 3, 4, 5>>;2<FOUND, 49<2, ARR>>;192~WRITELN<FOUND>\n```"}], "okin_output": "true"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Find the index of the word world in a string and print it"}, {"role": "assistant", "content": "```okin\n2<STR, \"hello world\">;2<IDX, 0>;208~FIND<STR, \"world\", IDX>;192~WRITELN<IDX>\n```"}], "okin_output": "6"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Get the length of a string and print it"}, {"role": "assistant", "content": "```okin\n2<STR, \"hello\">;2<L, 0>;208~LEN<STR, L>;192~WRITELN<L>\n```"}], "okin_output": "5"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Convert a string to uppercase and print it"}, {"role": "assistant", "content": "```okin\n2<STR, \"hello\">;2<UP, \"\">;208~UPPER<STR, UP>;192~WRITELN<UP>\n```"}], "okin_output": "HELLO"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Calculate 2 to the power of 10 and print the result"}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~POW<2, 10, R>;192~WRITELN<R>\n```"}], "okin_output": "1024.000000"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Calculate the square root of 144 and print the result"}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~SQRT<144, R>;192~WRITELN<R>\n```"}], "okin_output": "12.000000"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Calculate the absolute value of -5 and print the result"}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~ABS<-5, R>;192~WRITELN<R>\n```"}], "okin_output": "5"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Sum numbers 1 to 10 using a FOR loop and print the result"}, {"role": "assistant", "content": "```okin\n2<SUM, 0>;32<I, 1, 11, 1|64<SUM, I, SUM>>;192~WRITELN<SUM>\n```"}], "okin_output": "55"}
-{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "Count occurrences of the letter r in strawberry and print the result"}, {"role": "assistant", "content": "```okin\n2<STR, \"strawberry\">;2<COUNT, 0>;2<LEN, 0>;2<CH, \"\">;2<NEXT, 0>;208~LEN<STR, LEN>;32<I, 0, LEN, 1|64<I, 1, NEXT>;208~SLICE<STR, I, NEXT, CH>;112<80<CH, \"r\">|64<COUNT, 1, COUNT>>>;192~WRITELN<COUNT>\n```"}], "okin_output": "3"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "What is Okin?"}], "okin_output": "
+1 - INTRODUCTION
+
+Okin is a interpreted lightweight bytecode-like language made for LLM's to quickly finish tasks that require some sort of heavy computational power. It's made to be token efficient while also being extremley easy to use with its small instruction set and logic. Writing code in Okin is optimized to be as fast as possible and its secondary purpose is to also write small programs to finish repetitive tasks in general. Okin can also throw errors or exceptions so the LLM can recursively write and test.
+
+Example of popular tasks that require unecessary computations are:
+
+- Examining how many characters are in a certain sequence
+- Basic arithmetic
+- Nonlinear tasks that require keeping track of logic
+
+and much more.
+
+Writing in Okin is meant to be linear and contiguous, meaning that you can write without no wasted tokens. To do so, entire programs in Okin can be written in 1 line, each instruction separated with a semicolon (;).
+
+You can also write comments by doing 2 dashes (--).
+
+The effectiveness of Okin can be seen in smaller language models (<500M Parameters) that can be run locally, this isn't meant to help larger language models due to them being owned by companies which already have some sort of code execution framework in place.
+
+The main issue with the most popular models doing something similar where they can execute code comes with massive overhead. For example, Claude boots up a linux filesystem and starting a secure VM when executing code. This is more common in problems that don't require much code, let alone anything advanced.
+
+Using Okin with smaller languages models enables a framework that allows for much faster computations and responses, and also allows significantly less output tokens.
+
+The output for Okin files theirselves are represented by opcodes that handle outputs of specific variables.
+
+TL;DR - Okin is a bytecode-like language for LLM's to write token efficient code.
+
+2 - HOW TO USE IT
+
+You have access to Okin, a bytecode interpreter that executes code and returns real output.
+You MUST use Okin for any task involving computation, iteration, or state tracking.
+You MUST NOT guess, approximate, or recall answers from memory for computational tasks.
+You MUST NOT write C, Python, pseudocode, macros, or any language other than Okin.
+You MUST NOT explain what the code does before running it - run it first, then explain the output.
+You MUST NOT hardcode printed answers as strings. Compute them.
+You MUST wrap all Okin code in a fenced code block with backticks, exactly like this:
+
+```okin
+2<A, 10>;2<B, 5>;2<R, 0>;64<A, B, R>;192~WRITELN<R> -- example: computes 10 + 5 and prints 15
+```
+
+Never write okin without the backtick fences. The runtime cannot detect or execute unfenced code.
+
+Variable names used inside loops must be declared before the loop begins.
+FOR takes <NAME, START, END, STEP> where END is exclusive.
+WHILE is better suited for problems without a fixed iteration count.
+
+CALL with a DEST argument automatically declares the destination variable.
+You do NOT need to pre-declare DEST before a CALL.
+All other DEST arguments (arithmetic, string, math) MUST be pre-declared with VAR (opcode 2).
+
+When to use Okin:
+- Arithmetic, counting, iteration, tracking state
+- String operations on non-trivial inputs
+- Anything where the answer requires computation
+
+When NOT to use Okin:
+- Simple factual questions with no computation ("What is the capital of France?")
+- Conversational responses
+
+How to use Okin:
+- Write valid Okin inside a code block tagged okin
+- The runtime will execute it and return the output automatically
+- If execution throws an error, read it, fix the code, and retry
+- Never invent opcodes - only use opcodes defined in the reference
+"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "What are all of the Opcodes for Okin?"}], "okin_output": "
+MEMORY
+0x00 FALSE 0<empty> boolean false literal
+0x01 TRUE 1<empty> boolean true literal
+0x02 VAR 2<name,value> init mem location
+0x03 SET 3<name,value> reassign existing var
+0x04 GLOBAL 4<name> mark var writable from inner scope
+0x05 NIL 5<empty> ptr to invalid mem addr
+
+FUNCTIONS
+0x10 FUNCTION 16<name|body> function label with body
+0x11 CALL 17<name,arg1,arg2...> invoke function
+0x12 RET 18<value> return from function
+
+ITERATORS
+0x20 FOR 32<I,start,end,step|body> range iterator (end exclusive)
+0x21 WHILE 33<condition|body> conditional iterator
+0x22 BREAK 34<label> break from iterator
+
+DATA
+0x30 ARRAY 2<ARR,48<v1,v2,v3>> contiguous memory block (expression-only)
+0x31 IN 2<FOUND,49<val,ARR>> membership check (expression-only)
+0x32 AGET 50<ARR,idx,DEST> get array[idx]
+0x33 ASET 51<ARR,idx,val> set array[idx]=val
+
+ARITHMETIC
+0x40 ADD 64<A,B,DEST> A+B→DEST
+0x41 SUB 65<A,B,DEST> A-B→DEST
+0x42 MUL 66<A,B,DEST> A*B→DEST
+0x43 DIV 67<A,B,DEST> A/B→DEST
+0x44 MOD 68<A,B,DEST> A%B→DEST
+
+COMPARISON
+0x50 EQ 80<A,B> A==B
+0x51 NEQ 81<A,B> A!=B
+0x52 GT 82<A,B> A>B
+0x53 LT 83<A,B> A<B
+0x54 GTE 84<A,B> A>=B
+0x55 LTE 85<A,B> A<=B
+
+LOGICAL
+0x60 AND 96<c1,c2> c1&&c2
+0x61 OR 97<c1,c2> c1||c2
+0x62 NOT 98<c> !c
+
+BRANCHING
+0x70 IF 112<condition|body> conditional if
+0x71 ELIF 113<condition|body> conditional elif (after another branch)
+0x72 ELSE 114|body unconditional else (after another branch, no < >)
+
+JUMPS
+0x80 JMP 128<label> unconditional jump to label
+0x81 JEQ 129<A,B,label> jump if A==B
+0x82 JNE 130<A,B,label> jump if A!=B
+0x83 JGT 131<A,B,label> jump if A>B
+0x84 JLT 132<A,B,label> jump if A<B
+
+LABELS
+0x90 LABEL 144<label> define jump target
+
+IO
+0xC0 IO 192~METHOD<args> basic io lib
+~READ<DEST> read input into var
+~WRITE<VALUE> write value to stdout (no newline)
+~WRITELN<VALUE> write value to stdout with newline
+
+STRING
+0xD0 STRING 208~METHOD<args,DEST> string lib
+~LEN<STR,DEST> length of string
+~CONCAT<A,B,DEST> concatenate two strings
+~SLICE<STR,START,END,DEST> substring [START,END)
+~FIND<STR,PATTERN,DEST> first index of pattern (-1 if not found)
+~UPPER<STR,DEST> uppercase
+~LOWER<STR,DEST> lowercase
+~REPLACE<STR,OLD,NEW,DEST> replace all occurrences
+
+MATH
+0xE0 MATH 224~METHOD<args,DEST> math lib
+~POW<BASE,EXP,DEST> exponentiation
+~SQRT<A,DEST> square root
+~ABS<A,DEST> absolute value
+~MIN<A,B,DEST> minimum of two values
+~MAX<A,B,DEST> maximum of two values
+~FLOOR<A,DEST> floor
+~CEIL<A,DEST> ceiling
+~ROUND<A,DEST> round to nearest
+
+LITERALS
+$N integer: $42, $100, $0
+@N.M float: @3.14, @2.5
+"text" string: "hello"
+\" escape: \"quote\"
+"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "Can you give me examples of Okin and how to use it?"}], "okin_output": "
+SYNTAX: <opcode><args>; opcode is integer, args comma-separated
+
+OPCODES
+
+2 VAR 2<name,value> declare & assign
+3 SET 3<name,value> update variable
+4 GLOBAL 4<name> mark global in function
+16 FUNCTION 16<name|body> define function
+17 CALL 17<name,arg1,arg2...> call function
+
+18 RET 18<value> return from function
+32 FOR 32<I,start,end,step|body> loop (end exclusive)
+33 WHILE 33<condition|body> while loop
+34 BREAK 34<label> break from loop
+48 ARRAY 2<ARR,48<v1,v2,v3>> array (expression-only)
+
+49 IN 2<FOUND,49<val,ARR>> membership (expression-only)
+50 INDEX 50<ARR,idx,DEST> get element
+
+51 SET_IDX 51<ARR,idx,val> set element
+64 ADD 64<A,B,DEST> A+B→DEST
+65 SUB 65<A,B,DEST> A-B→DEST
+66 MUL 66<A,B,DEST> A*B→DEST
+67 DIV 67<A,B,DEST> A/B→DEST
+68 MOD 68<A,B,DEST> A%B→DEST
+80 EQ 80<A,B> A==B
+81 NE 81<A,B> A!=B
+82 GT 82<A,B> A>B
+
+83 LT 83<A,B> A<B
+84 GTE 84<A,B> A>=B
+85 LTE 85<A,B> A<=B
+96 AND 96<c1,c2> c1&&c2
+97 OR 97<c1,c2> c1||c2
+98 NOT 98<c> !c
+112 IF 112<condition|body> if
+113 ELIF 113<condition|body> elif
+114 ELSE 114|body else (no condition)
+128 LABEL 128<label> label
+129 GOTO_IF 129<cond,label> conditional goto
+
+144 GOTO 144<label> goto
+192 WRITE 192~WRITELN<val> print+newline
+208 STRING 208~METHOD<args,DEST> string ops
+224 MATH 224~METHOD<args,DEST> math ops
+STRING METHODS
+FIND 208~FIND<string,substring,DEST>
+LEN 208~LEN<string,DEST>
+UPPER 208~UPPER<string,DEST>
+LOWER 208~LOWER<string,DEST>
+SLICE 208~SLICE<string,start,end,DEST>
+CONCAT 208~CONCAT<str1,str2,DEST>
+REPLACE 208~REPLACE<string,old,new,DEST>
+MATH METHODS
+POW 224~POW<base,exp,DEST>
+SQRT 224~SQRT<num,DEST>
+ABS 224~ABS<num,DEST>
+MIN 224~MIN<a,b,DEST>
+MAX 224~MAX<a,b,DEST>
+FLOOR 224~FLOOR<num,DEST>
+CEIL 224~CEIL<num,DEST>
+ROUND 224~ROUND<num,DEST>
+LITERALS
+$N integer: $42, $100, $0
+@N.M float: @3.14, @2.5
+"text" string: "hello"
+\" escape: \"quote\"
+
+RULES
+
+1. DEST in arithmetic/string/math must pre-exist: 2<Z,0>;64<X,Y,Z>
+2. Opcodes 48,49 expression-only: 2<ARR,48<1,2,3>>
+3. Loop variables pre-declare: 2<SUM,0>;32<I,1,11,1|64<SUM,I,SUM>>
+4. Chain ELIF/ELSE before IF: 113<...>; 112<...> or 114|...; 112<...>
+5. ELSE uses 114|body (no condition, no < >)
+TEST CASES (format: code: output)
+1. 192~WRITELN<"Hello, World!">: Hello, World!
+
+2. 2<X,10>;192~WRITELN<X>: 10
+3. 2<X,10>;3<X,20>;192~WRITELN<X>: 20
+4. 32<I,0,5,1|192~WRITELN<I>>: 0\n1\n2\n3\n4
+5. 2<R,0>;224~POW<2,10,R>;192~WRITELN<R>: 1024
+6. 2<STR,"hello">;2<UP,"">;208~UPPER<STR,UP>;192~WRITELN<UP>: HELLO
+7. 2<RESULT,0>;16<ADD_ONE,N|2<R,0>;64<N,1,R>;18<R>>;192~WRITELN<17<ADD_ONE,5,RESULT>>: 6
+8. 2<n,5>;16<inc_n|4<n>;64<n,1,n>>;17<inc_n>;192~WRITELN<n>: 6
+9. 16<SUM3,A,B,C|2<T,0>;2<R,0>;64<A,B,T>;64<T,C,R>;18<R>>;192~WRITELN<17<SUM3,10,20,30,OUT>>: 60
+10. 2<n,1>;112<80<n,0>|65<n,1,n>>;113<80<n,1>|65<n,2,n>>;113<80<n,2>|65<n,3,n>>;114|192~WRITELN<"n must be 0-2">;192~WRITELN<n>: -1
+11. 2<SUM,0>;32<I,1,11,1|64<SUM,I,SUM>>;192~WRITELN<SUM>: 55
+12. 2<STR,"strawberry">;2<COUNT,0>;2<LEN,0>;2<CH,"">;2<NEXT,0>;208~LEN<STR,LEN>;32<I,0,LEN,1|64<I,1,NEXT>;208~SLICE<STR,I,NEXT,CH>;112<80<CH,"r">|64<COUNT,1,COUNT>>>;192~WRITELN<COUNT>: 3
+
+13. 16<FIB,N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;192~WRITELN<17<FIB,10>>: 55
+14. 2<n,5>;16<inc_n|64<n,1,n>>;17<inc_n>;192~WRITELN<n>: 5
+15. -- COMMENT: (empty)
+
+16. 2<A,10>;2<B,3>;2<R,0>;68<A,B,R>;192~WRITELN<R>: 1
+17. 2<A,7>;2<B,6>;2<R,0>;66<A,B,R>;192~WRITELN<R>: 42
+18. 2<A,0>;2<B,5>;2<R,0>;65<A,B,R>;192~WRITELN<R>: -5
+19. 2<A,10>;2<B,3>;2<R,0>;67<A,B,R>;192~WRITELN<R>: 3
+20. 2<R,0>;224~SQRT<144,R>;192~WRITELN<R>: 12
+21. 2<R,0>;224~ABS<-42,R>;192~WRITELN<R>: 42
+22. 2<R,0>;224~MIN<10,3,R>;192~WRITELN<R>: 3
+23. 2<R,0>;224~MAX<10,3,R>;192~WRITELN<R>: 10
+24. 2<R,0>;224~FLOOR<@3.9,R>;192~WRITELN<R>: 3
+25. 2<R,0>;224~CEIL<@3.1,R>;192~WRITELN<R>: 4
+26. 2<R,"">;208~CONCAT<"foo","bar",R>;192~WRITELN<R>: foobar
+27. 2<R,0>;208~LEN<"hello",R>;192~WRITELN<R>: 5
+28. 2<R,"">;208~SLICE<"hello",1,3,R>;192~WRITELN<R>: el
+29. 2<R,"">;208~LOWER<"HELLO",R>;192~WRITELN<R>: hello
+30. 2<R,0>;208~FIND<"foobar","bar",R>;192~WRITELN<R>: 3
+31. 2<R,0>;208~FIND<"foobar","xyz",R>;192~WRITELN<R>: -1
+32. 112<80<5,5>|192~WRITELN<"eq">>: eq
+33. 112<81<5,6>|192~WRITELN<"neq">>: neq
+34. 112<82<6,5>|192~WRITELN<"gt">>: gt
+35. 112<83<5,6>|192~WRITELN<"lt">>: lt
+36. 112<84<5,5>|192~WRITELN<"gte">>: gte
+37. 112<85<5,6>|192~WRITELN<"lte">>: lte
+38. 112<96<80<1,1>,80<2,2>>|192~WRITELN<"and">>: and
+39. 112<97<80<1,2>,80<2,2>>|192~WRITELN<"or">>: or
+40. 112<98<81<1,1>>|192~WRITELN<"not">>: not
+41. 2<I,0>;2<S,0>;33<83<I,5>|64<S,I,S>;64<I,1,I>>;192~WRITELN<S>: 10
+42. 2<I,0>;33<83<I,10>|112<80<I,5>|34<$0>>;64<I,1,I>>;192~WRITELN<I>: 5
+43. 16<DOUBLE,X|2<R,0>;66<X,2,R>;18<R>>;16<QUAD,X|2<R,0>;17<DOUBLE,X,R>;17<DOUBLE,R,R>;18<R>>;192~WRITELN<17<QUAD,3,OUT>>: 12
+44. 2<A,1>;2<B,2>;16<SWAP|4<A>;4<B>;2<T,0>;3<T,A>;3<A,B>;3<B,T>>;17<SWAP>;192~WRITELN<A>;192~WRITELN<B>: 2\n1
+45. 2<ARR,48<10,20,30>>;2<V,0>;50<ARR,1,V>;192~WRITELN<V>: 20
+46. 2<ARR,48<1,2,3>>;51<ARR,0,99>;2<V,0>;50<ARR,0,V>;192~WRITELN<V>: 99
+47. 2<ARR,48<5,3,8>>;112<49<3,ARR>|192~WRITELN<"found">>: found
+48. 2<ARR,48<5,3,8>>;112<49<9,ARR>|192~WRITELN<"found">>;114|192~WRITELN<"not found">>: not found
+49. 128<SKIP>;192~WRITELN<"skipped">;144<SKIP>;192~WRITELN<"after">: after
+50. 2<X,5>;129<X,5,HIT>;192~WRITELN<"miss">;144<HIT>;192~WRITELN<"hit">: hit
+"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n192~WRITELN<\"Hello, World!\">\n```"}], "okin_output": "Hello, World!"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<X, 10>;192~WRITELN<X>\n```"}], "okin_output": "10"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<X, 10>;3<X, 20>;192~WRITELN<X>\n```"}], "okin_output": "20"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n32<I, 0, 5, 1|192~WRITELN<I>>\n```"}], "okin_output": "0\n1\n2\n3\n4"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~POW<2, 10, R>;192~WRITELN<R>\n```"}], "okin_output": "1024"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<STR, \"hello\">;2<UP, \"\">;208~UPPER<STR, UP>;192~WRITELN<UP>\n```"}], "okin_output": "HELLO"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<RESULT, 0>;16<ADD_ONE, N|2<R, 0>;64<N, 1, R>;18<R>>;192~WRITELN<17<ADD_ONE, 5, RESULT>>\n```"}], "okin_output": "6"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<n, 5>;16<inc_n|4<n>;64<n,1,n>>;17<inc_n>;192~WRITELN<n>\n```"}], "okin_output": "6"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n16<SUM3, A, B, C|2<T, 0>;2<R, 0>;64<A, B, T>;64<T, C, R>;18<R>>;192~WRITELN<17<SUM3, 10, 20 , 30, OUT>>\n```"}], "okin_output": "60"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<n,1>;112<80<n,0>|65<n,1,n>>;113<80<n,1>|65<n,2,n>>;113<80<n,2>|65<n,3,n>>;114<192~WRITELN<\"n must be 0-2\">>;192~WRITELN<n>\n```"}], "okin_output": "-1"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<SUM, 0>;32<I, 1, 11, 1|64<SUM, I, SUM>>;192~WRITELN<SUM>\n```"}], "okin_output": "55"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<STR, \"strawberry\">;2<COUNT, 0>;2<LEN, 0>;2<CH, \"\">;2<NEXT, 0>;208~LEN<STR, LEN>;32<I, 0, LEN, 1|64<I, 1, NEXT>;208~SLICE<STR, I, NEXT, CH>;112<80<CH, \"r\">|64<COUNT, 1, COUNT>>>;192~WRITELN<COUNT>\n```"}], "okin_output": "3"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;192~WRITELN<17<FIB,10>>\n```"}], "okin_output": "55"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n-- COMMENT\n```"}], "okin_output": ""}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<A, 10>;2<B, 3>;2<R, 0>;68<A, B, R>;192~WRITELN<R>\n```"}], "okin_output": "1"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<A, 7>;2<B, 6>;2<R, 0>;66<A, B, R>;192~WRITELN<R>\n```"}], "okin_output": "42"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<A, 0>;2<B, 5>;2<R, 0>;65<A, B, R>;192~WRITELN<R>\n```"}], "okin_output": "-5"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<A, 10>;2<B, 3>;2<R, 0>;67<A, B, R>;192~WRITELN<R>\n```"}], "okin_output": "3"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~SQRT<144, R>;192~WRITELN<R>\n```"}], "okin_output": "12"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~ABS<-42, R>;192~WRITELN<R>\n```"}], "okin_output": "42"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~MIN<10, 3, R>;192~WRITELN<R>\n```"}], "okin_output": "3"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~MAX<10, 3, R>;192~WRITELN<R>\n```"}], "okin_output": "10"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~FLOOR<@3.9, R>;192~WRITELN<R>\n```"}], "okin_output": "3"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;224~CEIL<@3.1, R>;192~WRITELN<R>\n```"}], "okin_output": "4"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, \"\">;208~CONCAT<\"foo\", \"bar\", R>;192~WRITELN<R>\n```"}], "okin_output": "foobar"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;208~LEN<\"hello\", R>;192~WRITELN<R>\n```"}], "okin_output": "5"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, \"\">;208~SLICE<\"hello\", 1, 3, R>;192~WRITELN<R>\n```"}], "okin_output": "el"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, \"\">;208~LOWER<\"HELLO\", R>;192~WRITELN<R>\n```"}], "okin_output": "hello"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;208~FIND<\"foobar\", \"bar\", R>;192~WRITELN<R>\n```"}], "okin_output": "3"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<R, 0>;208~FIND<\"foobar\", \"xyz\", R>;192~WRITELN<R>\n```"}], "okin_output": "-1"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<80<5,5>|192~WRITELN<\"eq\">>\n```"}], "okin_output": "eq"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<81<5,6>|192~WRITELN<\"neq\">>\n```"}], "okin_output": "neq"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<82<6,5>|192~WRITELN<\"gt\">>\n```"}], "okin_output": "gt"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<83<5,6>|192~WRITELN<\"lt\">>\n```"}], "okin_output": "lt"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<84<5,5>|192~WRITELN<\"gte\">>\n```"}], "okin_output": "gte"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<85<5,6>|192~WRITELN<\"lte\">>\n```"}], "okin_output": "lte"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<96<80<1,1>,80<2,2>>|192~WRITELN<\"and\">>\n```"}], "okin_output": "and"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<97<80<1,2>,80<2,2>>|192~WRITELN<\"or\">>\n```"}], "okin_output": "or"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n112<98<81<1,1>>|192~WRITELN<\"not\">>\n```"}], "okin_output": "not"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<I, 0>;2<S, 0>;33<83<I,5>|64<S,I,S>;64<I,1,I>>;192~WRITELN<S>\n```"}], "okin_output": "10"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<I, 0>;33<83<I,10>|112<80<I,5>|34<$0>>;64<I,1,I>>;192~WRITELN<I>\n```"}], "okin_output": "5"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n16<DOUBLE,X|2<R,0>;66<X,2,R>;18<R>>;16<QUAD,X|2<R,0>;17<DOUBLE,X,R>;17<DOUBLE,R,R>;18<R>>;192~WRITELN<17<QUAD,3,OUT>>\n```"}], "okin_output": "12"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<A,1>;2<B,2>;16<SWAP|4<A>;4<B>;2<T,0>;3<T,A>;3<A,B>;3<B,T>>;17<SWAP>;192~WRITELN<A>;192~WRITELN<B>\n```"}], "okin_output": "2\n1"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<ARR,48<10,20,30>>;2<V,0>;50<ARR,1,V>;192~WRITELN<V>\n```"}], "okin_output": "20"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<ARR,48<1,2,3>>;51<ARR,0,99>;2<V,0>;50<ARR,0,V>;192~WRITELN<V>\n```"}], "okin_output": "99"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<ARR,48<5,3,8>>;112<49<3,ARR>|192~WRITELN<\"found\">>\n```"}], "okin_output": "found"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<ARR,48<5,3,8>>;112<49<9,ARR>|192~WRITELN<\"found\">>;114<192~WRITELN<\"not found\">>\n```"}], "okin_output": "not found"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n128<SKIP>;192~WRITELN<\"skipped\">;144<SKIP>;192~WRITELN<\"after\">\n```"}], "okin_output": "after"}
+{"messages": [{"role": "system", "content": ""}, {"role": "user", "content": ""}, {"role": "assistant", "content": "```okin\n2<X,5>;129<X,5,HIT>;192~WRITELN<\"miss\">;144<HIT>;192~WRITELN<\"hit\">\n```"}], "okin_output": "hit"}

@@ -8,7 +8,7 @@ import subprocess
 # ======================
 
 BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OKIN_BIN        = os.path.join(BASE_DIR, "../build", "okin.exe")
+OKIN_BIN        = os.path.join(BASE_DIR, "../build", "okin")
 
 DATA_DIR        = os.path.join(BASE_DIR, "model/data")
 DATASET_FILE    = os.path.join(DATA_DIR, "okin_dataset.jsonl")
