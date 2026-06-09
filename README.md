@@ -2,6 +2,8 @@
 
 > A lightweight, bytecode-like language designed for LLMs to execute computational tasks with **minimal token overhead**.
 
+[Okin Medium Logo](media/images/okin_icon.png "Okin Logo")
+
 ---
 
 ## What is Okin?
