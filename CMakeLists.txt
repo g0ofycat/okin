@@ -39,6 +39,14 @@ if(USE_VM)
 	)
 endif()
 
+set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -funroll-loops -fomit-frame-pointer -flto")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -funroll-loops -fomit-frame-pointer -flto")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fno-omit-frame-pointer")
+
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-flto=auto")
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-flto=auto")
+
 add_library(okin_lib STATIC ${OKIN_SOURCES})
 target_include_directories(okin_lib PUBLIC ${OKIN_INCLUDES})
 
@@ -47,15 +55,9 @@ if(USE_VM)
 endif()
 
 add_executable(okin core/core.cpp)
-target_compile_options(okin PRIVATE -O3 -march=native -funroll-loops -fomit-frame-pointer -flto)
-target_link_options(okin PRIVATE -flto)
-
 target_link_libraries(okin PRIVATE okin_lib)
 
 add_executable(okin_bench core/core.cpp)
-target_compile_options(okin_bench PRIVATE -O3 -march=native -funroll-loops -fomit-frame-pointer -flto)
-target_link_options(okin_bench PRIVATE -flto -static-libgcc -static-libstdc++)
-
 target_compile_definitions(okin_bench PRIVATE USE_BENCHMARK BENCHMARK_STATIC_DEFINE)
 target_link_libraries(okin_bench PRIVATE okin_lib benchmark::benchmark pthread)
 target_link_options(okin_bench PRIVATE -static-libgcc -static-libstdc++)

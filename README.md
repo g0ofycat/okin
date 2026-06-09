@@ -70,17 +70,18 @@ Variables are dynamically typed. Type is inferred on assignment and can change o
 
 ## VM Flag
 
-For faster code execution *(~10x speed)*, use the **"-vm"** flag to go from: Walking an AST and then running line by line; to instead compiling the parsed tokens, and then using a VM to execute actual bytecode (not Okin) to make execution much faster.
+For faster code execution *(~10-20x speed)*, use the **"-vm"** flag to go from: Walking an AST and then running line by line; to instead compiling the parsed tokens, and then using a VM to execute actual bytecode (not Okin) to make execution much faster.
 
 **Tests (Using [Google Benchmark](https://github.com/google/benchmark)):**
 
-The following tests are the accumulated sum of **1 million indicies** *(1-1000000)*
+The following tests is a naive implementation of fib(25) without memoization
 
 - Without the **-vm** flag:
 
 ```
-g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "2<SUM, 0>;32<I, 1, 1000001, 1|64<SUM, I, SUM>>"
-2026-06-03T09:37:48-04:00
+g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<
+FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;17<FIB,25>"
+2026-06-09T09:10:26-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)
 CPU Caches:
@@ -88,19 +89,18 @@ CPU Caches:
   L1 Instruction 32 KiB (x2)
   L2 Unified 1024 KiB (x2)
   L3 Unified 16384 KiB (x1)
-Load Average: 0.05, 0.47, 0.40
-***WARNING*** ASLR is enabled, the results may have unreproducible noise in them.
+Load Average: 1.96, 1.10, 0.55
 -----------------------------------------------------
 Benchmark           Time             CPU   Iterations
 -----------------------------------------------------
-BM_okin     997945352 ns   1000009530 ns            1
+BM_okin     488080633 ns    505805024 ns            2
 ```
 
 - With the **-vm** flag:
 
 ```
-g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "2<SUM, 0>;32<I, 1, 1000001, 1|64<SUM, I, SUM>>" -vm
-2026-06-03T09:37:41-04:00
+g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;17<FIB,25>" -vm
+2026-06-09T09:08:46-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)
 CPU Caches:
@@ -108,10 +108,9 @@ CPU Caches:
   L1 Instruction 32 KiB (x2)
   L2 Unified 1024 KiB (x2)
   L3 Unified 16384 KiB (x1)
-Load Average: 0.06, 0.49, 0.41
-***WARNING*** ASLR is enabled, the results may have unreproducible noise in them.
+Load Average: 1.70, 0.74, 0.39
 -----------------------------------------------------
 Benchmark           Time             CPU   Iterations
 -----------------------------------------------------
-BM_okin_vm  102588866 ns    102041744 ns            7
+BM_okin_vm   37182748 ns     37131938 ns           20
 ```
