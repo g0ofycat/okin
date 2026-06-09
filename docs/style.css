@@ -111,6 +111,7 @@ footer {
 	width: 16px;
 	height: 14px;
 	background: var(--window-bg);
+	margin-left: 5px;
 	border: 1px solid;
 	border-color: var(--window-border-light) var(--window-border-dark) var(--window-border-dark) var(--window-border-light);
 	display: flex;
