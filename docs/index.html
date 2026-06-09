@@ -19,112 +19,151 @@
 		</nav>
 	</header>
 
-	<h1>Overview</h1>
-	<p><b>Not much of a documentation of the project</b>, as that would be quite <i>redundant</i> (Opcodes, explanation,
-		etc. are all defined in the 'prompt/' folder). It's more based on the journey of creating it and specific
-		architecture issues i've faced while creating this project.</p>
-	<h2>How it started</h2>
-	<p><b>2026-04-29T19:46:02Z</b>: I was just wasting time by completing some Leetcode questions for fun when I thought
-		of this pretty neat idea: A programming language for LLM's. Pretty generic topic, but this was before that one
-		project you see on Xitter about that programming language that was AI first or something: <a
-			href=https://x.com/ctatedev/status/2055434061322039377>This one.</a> He, <b>obviously</b> got shit on when
-		people realized that the whole entire project was vibecoded. Guess what company he works for. But that's not the
-		main point I wanted to discuss about this project. It was the fact that the project itself is just a really poor
-		imitation of Rust. This raises some concerns like: Why choose this language over others, what makes this an LLM
-		first programming language compared to other languages in which the model knows how to write code in due to it
-		being in their training data, and more.</p>
-	<h2>"The best programming language for LLM's"</h2>
-	<p>There's 2 key factors on how a programming language can be good for LLM's: How much meaning it can convey in a
-		single token, and how well the model can understand it. Now, for the first one, you can obviously just make
-		your program as minimal as possible, maybe having some unicode that iterates 10 times for example. The second
-		one is
-		inversley proportional compared to the first one. As the tokens get more esoteric and less token efficient,
-		the model understand the programming language less and less. There's 2 main ways you can fix this: By writing a
-		custom tokenizer for your language model, and fine tuning. The
-		first one is pretty easy, the second one is something I want to talk about. (Also another interesting post by
-		<a href="https://x.com/lauriewired/status/2055672641122635789">Laurie Wired</a>, around when I was starting to
-		make
-		the OVM - Okin Virtual Machine)
-	</p>
-	<h2>Pushing the limits of meaning</h2>
-	<p>The question that defines any programming language for LLM's is <b>"How compact can I make it?"</b> When I
-		started
-		this project, I had <i>one</i> thing in mind that I wanted to do with the actual LLM: Allow it to bootstrap and
-		finetune
-		itself based on it's own Okin code (which is what the llm/ folder is dedicated for other than inferencing the
-		actual Okin LLM). I tried for a solid week fighting with Colab's GPU limits and quantization before I just fully
-		gave up on that idea. I couldn't just finetune it locally on my computer also. Why?</p>
-	<p align="center">
-		<img style='border:2px solid #000000' img src="./media_webpage/01_stats.png" alt="LMAOOOOOOO" width="50%"
-			height="50%" />
-	</p>
-	<p>Pretty pathetic for what I do. I know. But, it works most of the time when im not training models, which is just
-		playing Roblox.</p>
-	<p>Furthermore, I wanted to talk about the spiral of making the most efficient programming language. <b>If you think
-			you've made it, you haven't.</b> You're 1 finetune away from making something better and someone else is
-		too. The limit of the most effective programming language is to have a language which is token efficient, but
-		also easy to understand for non finetuned models. Thus, I created Okin. A minimal instruction set / bytecode
-		like programming language with minimal whitespace and syntax.</p>
-	<h2>Simplicity</h2>
-	<p>I saw similar people doing what I was doing in Laurie's comment section, (albeit 1 month after I started it 😎)
-		having their own programming language for LLM's. Except, they had way too many features. I don't see the need
-		for all of this complexity, because why would it even need it? The occasional times when I try "SOTA" LLM's like
-		Claude, they use this coding feature to speed up tasks or solve computationally hard problems for an LLM by
-		just propagating work to a VM (more on this VM's like this later) which executes code (usually Python) to write
-		some simple
-		scripts. Keyword, <b>simple</b>.
-		All you really need from a LLM based programming language is for it to be turing complete along with some
-		abstractions to make writing code faster.</p>
-	<h2>Overhead and Speed</h2>
-	<i>"Larger models from major providers already have code execution frameworks, but those come with significant
-		infrastructure cost: spinning up VMs, sandboxed filesystems, and secure runtimes. For simple tasks (which is
-		what
-		most LLM's use it for), that overhead is wasteful."</i> are the lines that come from my README.md. While code
-	speed
-	is less important than the other factors in making an LLM programming language, it's still needed if the LLM wants
-	to write more complex and computationally heavy programs. Which, is why I created a minimal compiler which then gets
-	fed into the OVM to execute true bytecode. This process is chosen between the interpreter v.s. the compiler -> OVM
-	pipeline. The VM path usually runs way faster, but the interpreter is considered in my opinion to be much simpler
-	and safer, which is why I want to talk about architecture and error handling.
-	<h2>Current Architecture and Design</h2>
-	<p>I wanted the LLM to have chances when writing Okin code so it can repair and write new code in the case it just
-		produces bogus. <b><i>This not only helped for actual bootstrapping which I was going to do but also for
-				inferencing</i></b>.
-		The main pipeline for this project is: <b>Lexing -> Parsing -> {Interpreting || Compilation -> OVM}</b>. In my
-		opinion, the language is pretty fast (probably because I just spam every optimization -f possible when building
-		with CMake). But anyways, the more specifics and my struggles are below in the <b>Code Specifics.</b>
-	</p>
-	<h2 role="main">Code Specifics</h2>
-	<p>
-		<b><i>The main part I wanted to talk about.</i></b> Nothing much to talk about in terms of the <i>lexer and
-			parser</i>, pretty simple stuff. The interpreter is just a simple AST walker based on the parser output,
-		something you would expect
-		from a toy language. The main thing I wanted to talk about is the compiler and OVM. <b>Boy, was this a pain in
+	<main>
+		<h1>Overview</h1>
+		<p><b>Not much of a documentation of the project</b>, as that would be quite <i>redundant</i> (Opcodes,
+			explanation,
+			etc. are all defined in the 'prompt/' folder). It's more based on the journey of creating it and specific
+			architecture issues i've faced while creating this project.</p>
+		<h2>How it started</h2>
+		<p><b>2026-04-29T19:46:02Z</b>: I was just wasting time by completing some Leetcode questions for fun when I
+			thought
+			of this pretty neat idea: A programming language for LLM's. Pretty generic topic, but this was before that
+			one
+			project you see on Xitter about that programming language that was AI first or something: <a
+				href=https://x.com/ctatedev/status/2055434061322039377>This one.</a> He, <b>obviously</b> got shit on
+			when
+			people realized that the whole entire project was vibecoded. Guess what company he works for. But that's not
 			the
-			ass to make</b>. My hardest project at the time was <a href=https://github.com/g0ofycat/x64-mlp>x64-mlp.</a>
-		which
-		got discontinued because somewhere before backpropagation I fucked up some register and everything went to shit.
-		Anyways, the reason it was so hard was because I tried to make the compiled true bytecode work similar to ASM.
-		But after all of that, the compiler was done. The VM was actually pretty easy, all I had to do was just do some
-		push and pop operations on the stack and also add some guards. The hardest part of the compiler and VM was
-		probably handling label jumps. The implementation equivalent for the interpreter was just a no-op in terms of
-		handling labels. The way I handled it in the compiler was by using this hacky label table method since the
-		parser outputs the statement position for jumps (which is correct only for interpreter) while the compiler
-		requires the bytecode position for jumps. I fixed this by just adding a way to track label and patches as shown
-		here:
-	<div class="window">
-		<div class="titlebar">
-			<span class="titlebar-text">compiler.c</span>
-			<div class="titlebar-buttons">
-				<button class="titlebar-btn" title="Minimize">_</button>
-				<button class="titlebar-btn" title="Maximize">□</button>
-				<button class="titlebar-btn" title="Close">✕</button>
+			main point I wanted to discuss about this project. It was the fact that the project itself is just a really
+			poor
+			imitation of Rust. This raises some concerns like: Why choose this language over others, what makes this an
+			LLM
+			first programming language compared to other languages in which the model knows how to write code in due to
+			it
+			being in their training data, and more.</p>
+		<h2>"The best programming language for LLM's"</h2>
+		<p>There's 2 key factors on how a programming language can be good for LLM's: How much meaning it can convey in
+			a
+			single token, and how well the model can understand it. Now, for the first one, you can obviously just make
+			your program as minimal as possible, maybe having some unicode that iterates 10 times for example. The
+			second
+			one is
+			inversley proportional compared to the first one. As the tokens get more esoteric and less token efficient,
+			the model understand the programming language less and less. There's 2 main ways you can fix this: By
+			writing a
+			custom tokenizer for your language model, and fine tuning. The
+			first one is pretty easy, the second one is something I want to talk about. (Also another interesting post
+			by
+			<a href="https://x.com/lauriewired/status/2055672641122635789">Laurie Wired</a>, around when I was starting
+			to
+			make
+			the OVM - Okin Virtual Machine)
+		</p>
+		<h2>Pushing the limits of meaning</h2>
+		<p>The question that defines any programming language for LLM's is <b>"How compact can I make it?"</b> When I
+			started
+			this project, I had <i>one</i> thing in mind that I wanted to do with the actual LLM: Allow it to bootstrap
+			and
+			finetune
+			itself based on it's own Okin code (which is what the llm/ folder is dedicated for other than inferencing
+			the
+			actual Okin LLM). I tried for a solid week fighting with Colab's GPU limits and quantization before I just
+			fully
+			gave up on that idea. I couldn't just finetune it locally on my computer also. Why?</p>
+		<p align="center">
+			<img style='border:2px solid #000000' img src="./media_webpage/01_stats.png" alt="LMAOOOOOOO" width="50%"
+				height="50%" />
+		</p>
+		<p>Pretty pathetic for what I do. I know. But, it works most of the time when im not training models, which is
+			just
+			playing Roblox.</p>
+		<p>Furthermore, I wanted to talk about the spiral of making the most efficient programming language. <b>If you
+				think
+				you've made it, you haven't.</b> You're 1 finetune away from making something better and someone else is
+			too. The limit of the most effective programming language is to have a language which is token efficient,
+			but
+			also easy to understand for non finetuned models. Thus, I created Okin. A minimal instruction set / bytecode
+			like programming language with minimal whitespace and syntax.</p>
+		<h2>Simplicity</h2>
+		<p>I saw similar people doing what I was doing in Laurie's comment section, (albeit 1 month after I started it
+			😎)
+			having their own programming language for LLM's. Except, they had way too many features. I don't see the
+			need
+			for all of this complexity, because why would it even need it? The occasional times when I try "SOTA" LLM's
+			like
+			Claude, they use this coding feature to speed up tasks or solve computationally hard problems for an LLM by
+			just propagating work to a VM (more on this VM's like this later) which executes code (usually Python) to
+			write
+			some simple
+			scripts. Keyword, <b>simple</b>.
+			All you really need from a LLM based programming language is for it to be turing complete along with some
+			abstractions to make writing code faster.</p>
+		<h2>Overhead and Speed</h2>
+		<i>"Larger models from major providers already have code execution frameworks, but those come with significant
+			infrastructure cost: spinning up VMs, sandboxed filesystems, and secure runtimes. For simple tasks (which is
+			what
+			most LLM's use it for), that overhead is wasteful."</i> are the lines that come from my README.md. While
+		code
+		speed
+		is less important than the other factors in making an LLM programming language, it's still needed if the LLM
+		wants
+		to write more complex and computationally heavy programs. Which, is why I created a minimal compiler which then
+		gets
+		fed into the OVM to execute true bytecode. This process is chosen between the interpreter v.s. the compiler ->
+		OVM
+		pipeline. The VM path usually runs way faster, but the interpreter is considered in my opinion to be much
+		simpler
+		and safer, which is why I want to talk about architecture and error handling.
+		<h2>Current Architecture and Design</h2>
+		<p>I wanted the LLM to have chances when writing Okin code so it can repair and write new code in the case it
+			just
+			produces bogus. <b><i>This not only helped for actual bootstrapping which I was going to do but also for
+					inferencing</i></b>.
+			The main pipeline for this project is: <b>Lexing -> Parsing -> {Interpreting || Compilation -> OVM}</b>. In
+			my
+			opinion, the language is pretty fast (probably because I just spam every optimization -f possible when
+			building
+			with CMake). But anyways, the more specifics and my struggles are below in the <b>Code Specifics.</b>
+		</p>
+		<h2>Code Specifics</h2>
+		<p>
+			<b><i>The main part I wanted to talk about.</i></b> Nothing much to talk about in terms of the <i>lexer and
+				parser</i>, pretty simple stuff. The interpreter is just a simple AST walker based on the parser output,
+			something you would expect
+			from a toy language. The main thing I wanted to talk about is the compiler and OVM. <b>Boy, was this a pain
+				in
+				the
+				ass to make</b>. My hardest project at the time was <a
+				href=https://github.com/g0ofycat/x64-mlp>x64-mlp.</a>
+			which
+			got discontinued because somewhere before backpropagation I fucked up some register and everything went to
+			shit.
+			Anyways, the reason it was so hard was because I tried to make the compiled true bytecode work similar to
+			ASM.
+			But after all of that, the compiler was done. The VM was actually pretty easy, all I had to do was just do
+			some
+			push and pop operations on the stack and also add some guards. The hardest part of the compiler and VM was
+			probably handling label jumps. The implementation equivalent for the interpreter was just a no-op in terms
+			of
+			handling labels. The way I handled it in the compiler was by using this hacky label table method since the
+			parser outputs the statement position for jumps (which is correct only for interpreter) while the compiler
+			requires the bytecode position for jumps. I fixed this by just adding a way to track label and patches as
+			shown
+			here:
+		<div class="window">
+			<div class="titlebar">
+				<span class="titlebar-text">compiler.c</span>
+				<div class="titlebar-buttons">
+					<button class="titlebar-btn" title="Minimize">_</button>
+					<button class="titlebar-btn" title="Maximize">□</button>
+					<button class="titlebar-btn" title="Close">✕</button>
+				</div>
 			</div>
-		</div>
 
-		<div class="content-area">
-			<div class="code-container">
-				<pre><span class="comment">// ======================
+			<div class="content-area">
+				<div class="code-container">
+					<pre><span class="comment">// ======================
 // -- LABEL TABLES
 // ======================</span>
  
@@ -144,7 +183,7 @@
 <span class="keyword">static int</span> <span class="function-name">lt_resolve</span>(<span class="keyword">const</span> <span class="type">label_table_t</span> *lt, <span class="keyword">const char</span> *name, <span class="type">size_t</span> len)
 {
 	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="string">0</span>; i < lt->label_count; i++)
-		<span class="keyword">if</span> (NAME_EQ(&lt;->labels[i], name, len))
+		<span class="keyword">if</span> (NAME_EQ(&amp;lt-&gt;labels[i], name, len))
 			<span class="keyword">return</span> lt->labels[i].bc_pos;
 	<span class="keyword">return</span> -<span class="string">1</span>;
 }
@@ -170,7 +209,7 @@
 {
 	<span class="type">compiler_label_entry_t</span> *found = NULL;
 	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="string">0</span>; i < lt->label_count; i++)
-		<span class="keyword">if</span> (NAME_EQ(&lt;->labels[i], name, len)) { found = &lt;->labels[i]; <span class="keyword">break</span>; }
+		<span class="keyword">if</span> (NAME_EQ(&amp;lt-&gt;labels[i], name, len)) { found = &amp;lt-&gt;labels[i]; <span class="keyword">break</span>; }
  
 	<span class="keyword">if</span> (found)
 		found->bc_pos = bc_pos;
@@ -178,46 +217,49 @@
 		lt->labels[lt->label_count++] = (compiler_label_entry_t){ name, len, bc_pos };
  
 	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="string">0</span>; i < lt->patch_count; ) {
-		<span class="type">compiler_label_entry_t</span> *p = &lt;->patches[i];
+		<span class="type">compiler_label_entry_t</span> *p = &amp;lt-&gt;patches[i];
 		<span class="keyword">if</span> (NAME_EQ(p, name, len)) {
 			chunk_patch(chunk, p->bc_pos, bc_pos);
 			lt->patches[i] = lt->patches[--lt->patch_count];
 		} <span class="keyword">else</span> { i++; }
 	}
 }</pre>
+				</div>
+			</div>
+
+			<div class="statusbar">
+				<div class="statusbar-field">Lines: 61 | Columns: 2</div>
+				<div class="statusbar-field">C99</div>
 			</div>
 		</div>
+		<p>Oh yeah, also implementing globals for the compiler was quite annoying, <b><i>but pretty easy.</i></b></p>
+		</p>
+		<p><a href=https://www.youtube.com/watch?v=qXTnYG2O8xU>Also a extra video of me "working" on it (a.k.a writing
+				documentation
+				for half of the video), when I was building
+				the base OVM.</a></p>
+		<p>For some reason I lied at the end of the video saying it worked on Windows, my interpreter just didn't work
+			because some feature I added the day before messed something up.</p>
+		<h2>Problems with Okin</h2>
+		<p><b><i>It's too simple. That's literally it.</i></b>
+			I could add more abstractions, libraries, and features to make it more token efficient but LLM programming
+			languages should be opinionated to reduce the chances of hallucination.
+		</p>
+		<h2>Closing</h2>
+		<p>On a more personal note about my thoughts on this project and Software Engineering / AI in general,
+			<i>i'm a recreational programming and none of my projects should really be taken seriously</i>,
+			but it's so disheartening to see people who only care about the money you can make from programming and how
+			they
+			focus on
+			being another cog in the system for FAANG or other Big Tech instead of being passionate.
+			I've been programming since I was ~9 years old,
+			<b><i>If you're in it for money, just keep slaving away at Leetcode or whatever and get that job, just steer
+					away from OSS development</i></b>
+			and for the love of god
+			<b>DO NOT MAKE OSS IF YOU DON'T KNOW WHAT YOU'RE DOING AND YOU'RE NOT PASSIONATE.</b>
+		</p>
+	</main>
 
-		<div class="statusbar">
-			<div class="statusbar-field">Lines: 61 | Columns: 2</div>
-			<div class="statusbar-field">C99</div>
-		</div>
-	</div>
-	<p>Oh yeah, also implementing globals for the compiler was quite annoying, <b><i>but pretty easy.</i></b></p>
-	</p>
-	<p><a href=https://www.youtube.com/watch?v=qXTnYG2O8xU>Also a extra video of me "working" on it (a.k.a writing
-			documentation
-			for half of the video), when I was building
-			the base OVM.</a></p>
-	<p>For some reason I lied at the end of the video saying it worked on Windows, my interpreter just didn't work
-		because some feature I added the day before messed something up.</p>
-	<h2>Problems with Okin</h2>
-	<p><b><i>It's too simple. That's literally it.</i></b>
-		I could add more abstractions, libraries, and features to make it more token efficient but LLM programming
-		languages should be opinionated to reduce the chances of hallucination.
-	</p>
-	<h2>Closing</h2>
-	<p>On a more personal note about my thoughts on this project and Software Engineering / AI in general,
-		<i>i'm a recreational programming and none of my projects should really be taken seriously</i>,
-		but it's so disheartening to see people who only care about the money you can make from programming and how they
-		focus on
-		being another cog in the system for FAANG or other Big Tech instead of being passionate.
-		I've been programming since I was ~9 years old,
-		<b><i>If you're in it for money, just keep slaving away at Leetcode or whatever and get that job, just steer
-				away from OSS development</i></b>
-		and for the love of god
-		<b>DO NOT MAKE OSS IF YOU DON'T KNOW WHAT YOU'RE DOING AND YOU'RE NOT PASSIONATE.</b>
-	</p>
 	<footer>
 		<p>&copy; 2026 Okin Project. All rights reserved.</p>
 	</footer>
