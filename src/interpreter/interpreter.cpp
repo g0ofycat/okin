@@ -62,17 +62,17 @@ void interpreter::init_tables()
 }
 
 // ======================
-// -- enviroment
+// -- environment
 // ======================
 
 /// @brief Enviroment constructor
-/// @param parent: Parent enviroment (default nullptr)
-enviroment::enviroment(enviroment *parent) : parent(parent) {}
+/// @param parent: Parent environment (default nullptr)
+environment::environment(environment *parent) : parent(parent) {}
 
 /// @brief Get variable value by name
 /// @param name
 /// @return okin_val_t*
-okin_val_t *enviroment::get(const std::string_view &name) {
+okin_val_t *environment::get(const std::string_view &name) {
 	auto it = vars.find(name);
 	if (it != vars.end()) return &it->second;
 	if (parent) return parent->get(name);
@@ -83,7 +83,7 @@ okin_val_t *enviroment::get(const std::string_view &name) {
 /// @brief Set a variable value
 /// @param name
 /// @param val
-void enviroment::set(const std::string_view &name, const okin_val_t &val)
+void environment::set(const std::string_view &name, const okin_val_t &val)
 {
 	auto it = vars.find(name);
 	if (it != vars.end()) { it->second = val; return; }
@@ -95,14 +95,14 @@ void enviroment::set(const std::string_view &name, const okin_val_t &val)
 /// @brief Declare a variable (current scope)
 /// @param name
 /// @param val
-void enviroment::declare(const std::string_view &name, const okin_val_t &val)
+void environment::declare(const std::string_view &name, const okin_val_t &val)
 {
 	vars[name] = val;
 }
 
 /// @brief Mark variable as global
 /// @param name
-void enviroment::mark_global(const std::string_view &name)
+void environment::mark_global(const std::string_view &name)
 {
 	globals[name] = true;
 }
@@ -110,7 +110,7 @@ void enviroment::mark_global(const std::string_view &name)
 
 /// @brief Check if the current scope is global
 /// @return bool
-bool enviroment::is_global_scope() const { return parent == nullptr && globals_env == nullptr; };
+bool environment::is_global_scope() const { return parent == nullptr && globals_env == nullptr; };
 
 // ======================
 // -- interpreter
@@ -120,7 +120,7 @@ bool enviroment::is_global_scope() const { return parent == nullptr && globals_e
 /// @param parser
 interpreter::interpreter(const parser_t *parser) :
 	program(parser->program),
-	global_env(new enviroment(nullptr, nullptr)),
+	global_env(new environment(nullptr, nullptr)),
 	ip(0)
 {
 	static bool initialized = false;
@@ -145,7 +145,7 @@ interpreter::~interpreter() {
 /// @brief Resolve leaf node value to okin_val_t
 /// @param node
 /// @param env
-okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::resolve(const okin_node_t *node, environment *env)
 {
 	std::string raw(node->val_start, node->val_len);
 
@@ -201,7 +201,7 @@ okin_val_t interpreter::resolve(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval(const okin_node_t *node, environment *env)
 {
 	if (node->opcode == NODE_LEAF)
 		return resolve(node, env);
@@ -219,7 +219,7 @@ okin_val_t interpreter::eval(const okin_node_t *node, enviroment *env)
 /// @param nodes
 /// @param len
 /// @param env
-void interpreter::execute_body(okin_node_t **nodes, int len, enviroment *env)
+void interpreter::execute_body(okin_node_t **nodes, int len, environment *env)
 {
 	for (int i = 0; i < len; i++)
 		execute(nodes[i], env);
@@ -232,7 +232,7 @@ void interpreter::execute_body(okin_node_t **nodes, int len, enviroment *env)
 /// @brief Execute a node
 /// @param node
 /// @param env
-void interpreter::execute(const okin_node_t *node, enviroment *env)
+void interpreter::execute(const okin_node_t *node, environment *env)
 {
 	exec_fn fn = EXEC_TABLE[node->opcode];
 	if (!fn) runtime_error("unknown opcode 0x" + std::to_string(node->opcode));

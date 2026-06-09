@@ -24,7 +24,7 @@ int64_t interpreter::expect_int(const okin_val_t &v, const char *ctx) {
 /// @brief Declare and assign a variable
 /// @param node
 /// @param env
-void interpreter::exec_var(const okin_node_t *node, enviroment *env)
+void interpreter::exec_var(const okin_node_t *node, environment *env)
 {
 	env->declare(tok_name(node->args[0]), eval(node->args[1], env));
 }
@@ -32,7 +32,7 @@ void interpreter::exec_var(const okin_node_t *node, enviroment *env)
 /// @brief Reassign an existing variable
 /// @param node
 /// @param env
-void interpreter::exec_set(const okin_node_t *node, enviroment *env)
+void interpreter::exec_set(const okin_node_t *node, environment *env)
 {
 	std::string_view name = tok_name(node->args[0]);
 	if (!env->get(name)) runtime_error("SET on undefined variable '" + std::string(name) + "'");
@@ -42,7 +42,7 @@ void interpreter::exec_set(const okin_node_t *node, enviroment *env)
 /// @brief Mark variable as writable from inner scope
 /// @param node
 /// @param env
-void interpreter::exec_global(const okin_node_t *node, enviroment *env)
+void interpreter::exec_global(const okin_node_t *node, environment *env)
 {
 	env->mark_global(tok_name(node->args[0]));
 }
@@ -54,7 +54,7 @@ void interpreter::exec_global(const okin_node_t *node, enviroment *env)
 /// @brief Register a function definition
 /// @param node
 /// @param env
-void interpreter::exec_function(const okin_node_t *node, enviroment *env)
+void interpreter::exec_function(const okin_node_t *node, environment *env)
 {
 	functions[tok_name(node->args[0])] = node;
 }
@@ -62,7 +62,7 @@ void interpreter::exec_function(const okin_node_t *node, enviroment *env)
 /// @brief Invoke a function
 /// @param node
 /// @param env
-void interpreter::exec_call(const okin_node_t *node, enviroment *env)
+void interpreter::exec_call(const okin_node_t *node, environment *env)
 {
 	std::string_view name = tok_name(node->args[0]);
 	auto it = functions.find(std::string(name));
@@ -70,7 +70,7 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 		runtime_error("call to undefined function '" + std::string(name) + "'");
 
 	const okin_node_t *fn = it->second;
-	auto fn_env = std::make_unique<enviroment>(nullptr, global_env);
+	auto fn_env = std::make_unique<environment>(nullptr, global_env);
 
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;
@@ -99,7 +99,7 @@ void interpreter::exec_call(const okin_node_t *node, enviroment *env)
 /// @brief Return a value from a function
 /// @param node
 /// @param env
-void interpreter::exec_ret(const okin_node_t *node, enviroment *env)
+void interpreter::exec_ret(const okin_node_t *node, environment *env)
 {
 	throw return_signal{ node->argc > 0 ? eval(node->args[0], env) : make_nil() };
 }
@@ -111,7 +111,7 @@ void interpreter::exec_ret(const okin_node_t *node, enviroment *env)
 /// @brief Range-based for loop
 /// @param node
 /// @param env
-void interpreter::exec_for(const okin_node_t *node, enviroment *env)
+void interpreter::exec_for(const okin_node_t *node, environment *env)
 {
 	std::string_view iter = tok_name(node->args[0]);
 	int64_t start = expect_int(eval(node->args[1], env), "FOR start");
@@ -120,7 +120,7 @@ void interpreter::exec_for(const okin_node_t *node, enviroment *env)
 
 	if (step == 0) runtime_error("FOR step cannot be zero");
 
-	auto loop_env = std::make_unique<enviroment>(env, nullptr);
+	auto loop_env = std::make_unique<environment>(env, nullptr);
 	try
 	{
 		for (int64_t i = start; i < end; i += step)
@@ -136,9 +136,9 @@ void interpreter::exec_for(const okin_node_t *node, enviroment *env)
 /// @brief Conditional while loop
 /// @param node
 /// @param env
-void interpreter::exec_while(const okin_node_t *node, enviroment *env)
+void interpreter::exec_while(const okin_node_t *node, environment *env)
 {
-	auto loop_env = std::make_unique<enviroment>(env, nullptr);
+	auto loop_env = std::make_unique<environment>(env, nullptr);
 	try
 	{
 		while (val_to_bool(eval(node->args[0], loop_env.get())))
@@ -150,7 +150,7 @@ void interpreter::exec_while(const okin_node_t *node, enviroment *env)
 /// @brief Break out of iterator
 /// @param node
 /// @param env
-void interpreter::exec_break(const okin_node_t *node, enviroment *env)
+void interpreter::exec_break(const okin_node_t *node, environment *env)
 {
 	throw break_signal{};
 }
@@ -162,7 +162,7 @@ void interpreter::exec_break(const okin_node_t *node, enviroment *env)
 /// @brief Get value at array index
 /// @param node
 /// @param env
-void interpreter::exec_aget(const okin_node_t *node, enviroment *env)
+void interpreter::exec_aget(const okin_node_t *node, environment *env)
 {
 	okin_val_t arr_v = eval(node->args[0], env);
 	if (arr_v.type != val_type_t::ARR) runtime_error("AGET requires an array");
@@ -175,7 +175,7 @@ void interpreter::exec_aget(const okin_node_t *node, enviroment *env)
 /// @brief Set value at array index
 /// @param node
 /// @param env
-void interpreter::exec_aset(const okin_node_t *node, enviroment *env)
+void interpreter::exec_aset(const okin_node_t *node, environment *env)
 {
 	std::string_view name = tok_name(node->args[0]);
 	okin_val_t *v         = env->get(std::string(name));
@@ -193,7 +193,7 @@ void interpreter::exec_aset(const okin_node_t *node, enviroment *env)
 /// @brief Arithmetic operations ADD SUB MUL DIV MOD
 /// @param node
 /// @param env
-void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
+void interpreter::exec_arith(const okin_node_t *node, environment *env)
 {
 	okin_val_t a     = eval(node->args[0], env);
 	okin_val_t b     = eval(node->args[1], env);
@@ -246,12 +246,12 @@ void interpreter::exec_arith(const okin_node_t *node, enviroment *env)
 /// @brief Conditional if block
 /// @param node
 /// @param env
-void interpreter::exec_if(const okin_node_t *node, enviroment *env)
+void interpreter::exec_if(const okin_node_t *node, environment *env)
 {
 	bool taken = val_to_bool(eval(node->args[0], env));
 	branch_stack.push_back(taken);
 	if (taken) {
-		auto if_env = std::make_unique<enviroment>(env, nullptr);
+		auto if_env = std::make_unique<environment>(env, nullptr);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, if_env.get());
 		else
@@ -262,12 +262,12 @@ void interpreter::exec_if(const okin_node_t *node, enviroment *env)
 /// @brief Conditional elif block
 /// @param node
 /// @param env
-void interpreter::exec_elif(const okin_node_t *node, enviroment *env)
+void interpreter::exec_elif(const okin_node_t *node, environment *env)
 {
 	if (branch_stack.empty()) runtime_error("ELIF/ELSE without preceding IF");
 	if (!branch_stack.back() && val_to_bool(eval(node->args[0], env))) {
 		branch_stack.back() = true;
-		auto elif_env = std::make_unique<enviroment>(env, nullptr);
+		auto elif_env = std::make_unique<environment>(env, nullptr);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, elif_env.get());
 		else
@@ -278,11 +278,11 @@ void interpreter::exec_elif(const okin_node_t *node, enviroment *env)
 /// @brief Unconditional else block
 /// @param node
 /// @param env
-void interpreter::exec_else(const okin_node_t *node, enviroment *env)
+void interpreter::exec_else(const okin_node_t *node, environment *env)
 {
 	if (branch_stack.empty()) runtime_error("ELIF/ELSE without preceding IF");
 	if (!branch_stack.back()) {
-		auto else_env = std::make_unique<enviroment>(env, nullptr);
+		auto else_env = std::make_unique<environment>(env, nullptr);
 		if (node->body_len > 0)
 			execute_body(node->body, node->body_len, else_env.get());
 		else if (node->args[0])
@@ -301,7 +301,7 @@ void interpreter::exec_else(const okin_node_t *node, enviroment *env)
 /// @brief Unconditional and conditional jumps
 /// @param node
 /// @param env
-void interpreter::exec_jmp(const okin_node_t *node, enviroment *env)
+void interpreter::exec_jmp(const okin_node_t *node, environment *env)
 {
 	if (node->opcode == JMP) { ip = node->args[0]->jump_index - 1; return; }
 
@@ -322,7 +322,7 @@ void interpreter::exec_jmp(const okin_node_t *node, enviroment *env)
 /// @brief Label no-op
 /// @param node
 /// @param env
-void interpreter::exec_label(const okin_node_t *node, enviroment *env) {}
+void interpreter::exec_label(const okin_node_t *node, environment *env) {}
 
 // ======================
 // -- EXEC: IO
@@ -331,7 +331,7 @@ void interpreter::exec_label(const okin_node_t *node, enviroment *env) {}
 /// @brief IO stdlib handler
 /// @param node
 /// @param env
-void interpreter::exec_io(const okin_node_t *node, enviroment *env)
+void interpreter::exec_io(const okin_node_t *node, environment *env)
 {
 	std::string_view method(node->method, node->method_len);
 
@@ -362,7 +362,7 @@ void interpreter::exec_io(const okin_node_t *node, enviroment *env)
 /// @brief String stdlib handler
 /// @param node
 /// @param env
-void interpreter::exec_string(const okin_node_t *node, enviroment *env)
+void interpreter::exec_string(const okin_node_t *node, environment *env)
 {
 	std::string_view method(node->method, node->method_len);
 
@@ -416,7 +416,7 @@ void interpreter::exec_string(const okin_node_t *node, enviroment *env)
 /// @brief Math stdlib handler
 /// @param node
 /// @param env
-void interpreter::exec_math(const okin_node_t *node, enviroment *env)
+void interpreter::exec_math(const okin_node_t *node, environment *env)
 {
 	std::string_view method(node->method, node->method_len);
 
@@ -481,7 +481,7 @@ void interpreter::exec_math(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_cmp(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_cmp(const okin_node_t *node, environment *env)
 {
 	okin_val_t a = eval(node->args[0], env);
 	okin_val_t b = eval(node->args[1], env);
@@ -524,7 +524,7 @@ okin_val_t interpreter::eval_cmp(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_logical(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_logical(const okin_node_t *node, environment *env)
 {
 	if (node->opcode == NOT)
 		return make_bool(!val_to_bool(eval(node->args[0], env)));
@@ -543,7 +543,7 @@ okin_val_t interpreter::eval_logical(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_array(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_array(const okin_node_t *node, environment *env)
 {
 	okin_val_t result = make_array();
 	auto &arr = *std::get<okin_array_t>(result.data);
@@ -560,7 +560,7 @@ okin_val_t interpreter::eval_array(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_in(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_in(const okin_node_t *node, environment *env)
 {
 	okin_val_t item  = eval(node->args[0], env);
 	okin_val_t arr_v = eval(node->args[1], env);
@@ -579,7 +579,7 @@ okin_val_t interpreter::eval_in(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_call(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_call(const okin_node_t *node, environment *env)
 {
 	std::string_view name = tok_name(node->args[0]);
 	auto it = functions.find(std::string(name));
@@ -587,7 +587,7 @@ okin_val_t interpreter::eval_call(const okin_node_t *node, enviroment *env)
 		runtime_error("call to undefined function '" + std::string(name) + "'");
 
 	const okin_node_t *fn = it->second;
-	auto fn_env = std::make_unique<enviroment>(global_env, nullptr);
+	auto fn_env = std::make_unique<environment>(global_env, nullptr);
 
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;
@@ -616,7 +616,7 @@ okin_val_t interpreter::eval_call(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_arith(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_arith(const okin_node_t *node, environment *env)
 {
 	okin_val_t a = eval(node->args[0], env);
 	okin_val_t b = eval(node->args[1], env);
@@ -666,7 +666,7 @@ okin_val_t interpreter::eval_arith(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_math(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_math(const okin_node_t *node, environment *env)
 {
 	std::string_view method(node->method, node->method_len);
 
@@ -730,7 +730,7 @@ okin_val_t interpreter::eval_math(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_string(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_string(const okin_node_t *node, environment *env)
 {
 	std::string_view method(node->method, node->method_len);
 
@@ -786,7 +786,7 @@ okin_val_t interpreter::eval_string(const okin_node_t *node, enviroment *env)
 /// @param node
 /// @param env
 /// @return okin_val_t
-okin_val_t interpreter::eval_io(const okin_node_t *node, enviroment *env)
+okin_val_t interpreter::eval_io(const okin_node_t *node, environment *env)
 {
 	std::string_view method(node->method, node->method_len);
 

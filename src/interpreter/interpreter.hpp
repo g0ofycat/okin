@@ -134,22 +134,22 @@ inline double to_double(const okin_val_t &v)
 }
 
 // ======================
-// -- enviroment
+// -- environment
 // ======================
 
-class enviroment {
+class environment {
 	public:
-		enviroment(enviroment *parent, enviroment *globals_env = nullptr)
+		environment(environment *parent, environment *globals_env = nullptr)
 			: parent(parent), globals_env(globals_env) {}
 
-		enviroment *parent      = nullptr;
-		enviroment *globals_env = nullptr;
+		environment *parent      = nullptr;
+		environment *globals_env = nullptr;
 		std::unordered_map<std::string_view, okin_val_t> vars;
 		std::unordered_map<std::string_view, bool>       globals;
 
 		/// @brief Enviroment constructor
-		/// @param parent: Parent enviroment (default nullptr)
-		explicit enviroment(enviroment *parent = nullptr);
+		/// @param parent: Parent environment (default nullptr)
+		explicit environment(environment *parent = nullptr);
 
 		/// @brief Get variable value by name
 		/// @param name
@@ -185,8 +185,8 @@ class interpreter {
 		// -- TYPES
 		// ======================
 
-		using exec_fn = void (interpreter::*)(const okin_node_t*, enviroment*);
-		using eval_fn = okin_val_t (interpreter::*)(const okin_node_t*, enviroment*);
+		using exec_fn = void (interpreter::*)(const okin_node_t*, environment*);
+		using eval_fn = okin_val_t (interpreter::*)(const okin_node_t*, environment*);
 
 		// ======================
 		// -- DATA
@@ -197,7 +197,7 @@ class interpreter {
 		std::vector<int> branch_stack;
 
 		const okin_program_t *program;
-		enviroment           *global_env;
+		environment           *global_env;
 		int                   ip;
 
 		// ======================
@@ -218,12 +218,12 @@ class interpreter {
 		/// @param nodes
 		/// @param len
 		/// @param env
-		void execute_body(okin_node_t **nodes, int len, enviroment *env);
+		void execute_body(okin_node_t **nodes, int len, environment *env);
 
 		/// @brief Resolve leaf node value to okin_val_t
 		/// @param node
 		/// @param env
-		okin_val_t resolve(const okin_node_t *node, enviroment *env);
+		okin_val_t resolve(const okin_node_t *node, environment *env);
 
 		/// @brief Throw runtime error
 		/// @param msg: Message to display
@@ -239,40 +239,40 @@ class interpreter {
 		// -- EXEC HANDLERS
 		// ======================
 
-		void exec_var(const okin_node_t *node, enviroment *env);
-		void exec_set(const okin_node_t *node, enviroment *env);
-		void exec_global(const okin_node_t *node, enviroment *env);
-		void exec_function(const okin_node_t *node, enviroment *env);
-		void exec_call(const okin_node_t *node, enviroment *env);
-		void exec_ret(const okin_node_t *node, enviroment *env);
-		void exec_for(const okin_node_t *node, enviroment *env);
-		void exec_while(const okin_node_t *node, enviroment *env);
-		void exec_break(const okin_node_t *node, enviroment *env);
-		void exec_aget(const okin_node_t *node, enviroment *env);
-		void exec_aset(const okin_node_t *node, enviroment *env);
-		void exec_arith(const okin_node_t *node, enviroment *env);
-		void exec_if(const okin_node_t *node, enviroment *env);
-		void exec_elif(const okin_node_t *node, enviroment *env);
-		void exec_else(const okin_node_t *node, enviroment *env);
-		void exec_jmp(const okin_node_t *node, enviroment *env);
-		void exec_label(const okin_node_t *node, enviroment *env);
-		void exec_io(const okin_node_t *node, enviroment *env);
-		void exec_string(const okin_node_t *node, enviroment *env);
-		void exec_math(const okin_node_t *node, enviroment *env);
+		void exec_var(const okin_node_t *node, environment *env);
+		void exec_set(const okin_node_t *node, environment *env);
+		void exec_global(const okin_node_t *node, environment *env);
+		void exec_function(const okin_node_t *node, environment *env);
+		void exec_call(const okin_node_t *node, environment *env);
+		void exec_ret(const okin_node_t *node, environment *env);
+		void exec_for(const okin_node_t *node, environment *env);
+		void exec_while(const okin_node_t *node, environment *env);
+		void exec_break(const okin_node_t *node, environment *env);
+		void exec_aget(const okin_node_t *node, environment *env);
+		void exec_aset(const okin_node_t *node, environment *env);
+		void exec_arith(const okin_node_t *node, environment *env);
+		void exec_if(const okin_node_t *node, environment *env);
+		void exec_elif(const okin_node_t *node, environment *env);
+		void exec_else(const okin_node_t *node, environment *env);
+		void exec_jmp(const okin_node_t *node, environment *env);
+		void exec_label(const okin_node_t *node, environment *env);
+		void exec_io(const okin_node_t *node, environment *env);
+		void exec_string(const okin_node_t *node, environment *env);
+		void exec_math(const okin_node_t *node, environment *env);
 
 		// ======================
 		// -- EVAL HANDLERS
 		// ======================
 
-		okin_val_t eval_cmp(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_logical(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_array(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_in(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_call(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_arith(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_math(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_string(const okin_node_t *node, enviroment *env);
-		okin_val_t eval_io(const okin_node_t *node, enviroment *env);
+		okin_val_t eval_cmp(const okin_node_t *node, environment *env);
+		okin_val_t eval_logical(const okin_node_t *node, environment *env);
+		okin_val_t eval_array(const okin_node_t *node, environment *env);
+		okin_val_t eval_in(const okin_node_t *node, environment *env);
+		okin_val_t eval_call(const okin_node_t *node, environment *env);
+		okin_val_t eval_arith(const okin_node_t *node, environment *env);
+		okin_val_t eval_math(const okin_node_t *node, environment *env);
+		okin_val_t eval_string(const okin_node_t *node, environment *env);
+		okin_val_t eval_io(const okin_node_t *node, environment *env);
 
 	public:
 		// ======================
@@ -304,12 +304,12 @@ class interpreter {
 		/// @param node
 		/// @param env
 		/// @return okin_val_t
-		okin_val_t eval(const okin_node_t *node, enviroment *env);
+		okin_val_t eval(const okin_node_t *node, environment *env);
 
 		/// @brief Execute a node
 		/// @param node
 		/// @param env
-		void execute(const okin_node_t *node, enviroment *env);
+		void execute(const okin_node_t *node, environment *env);
 
 		/// @brief Interpret and run token stream
 		void run();
