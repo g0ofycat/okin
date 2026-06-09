@@ -79,8 +79,7 @@ The following tests is a naive implementation of fib(25) without memoization
 - Without the **-vm** flag:
 
 ```
-g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<
-FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;17<FIB,25>"
+g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;17<FIB,25>"
 2026-06-09T09:10:26-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)

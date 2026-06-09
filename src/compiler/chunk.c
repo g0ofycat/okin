@@ -112,7 +112,7 @@ void chunk_print(const chunk_t *chunk) {
 	printf("- CODE\n");
 	for (int i = 0; i < chunk->code_len; i++) {
 		const instruction_t *inst = &chunk->code[i];
-		printf("%04d | %d %d\n", i, inst->op, inst->a);
+		printf("%04d | %s %d\n", i, opcode_names[inst->op], inst->a);
 	}
 
 	if (chunk->const_len > 0) {

@@ -69,8 +69,24 @@ typedef enum {
 	OP_MATH_FLOOR,
 	OP_MATH_CEIL,
 
+	// -- STOP --
 	OP_HALT,
 	OP_BREAK,
 } vm_op_t;
+
+static const char *opcode_names[] = {
+	"LOAD_CONST", "LOAD_LOCAL", "STORE_LOCAL", "LOAD_GLOBAL", "STORE_GLOBAL",
+	"TRUE", "FALSE", "NIL", "POP",
+	"ADD", "SUB", "MUL", "DIV", "MOD",
+	"EQ", "NEQ", "GT", "LT", "GTE", "LTE",
+	"AND", "OR", "NOT",
+	"JMP", "JMP_FALSE", "JEQ", "JNE", "JGT", "JLT",
+	"LOAD_FUNC", "CALL", "RET",
+	"MAKE_ARRAY", "ARRAY_GET", "ARRAY_SET", "IN",
+	"IO_WRITE", "IO_WRITELN", "IO_READ",
+	"STR_LEN", "STR_CONCAT", "STR_SLICE", "STR_FIND", "STR_UPPER", "STR_LOWER",
+	"MATH_POW", "MATH_SQRT", "MATH_ABS", "MATH_MIN", "MATH_MAX", "MATH_FLOOR", "MATH_CEIL",
+	"HALT", "BREAK"
+};
 
 #endif
