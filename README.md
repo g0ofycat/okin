@@ -3,7 +3,7 @@
 > A lightweight, bytecode-like language designed for LLMs to execute computational tasks with **minimal token overhead**.
 
 <p align="center">
-    <img src="media/images/okin_icon.png"/>
+    <img src="media/images/okin_icon.png" style="width: 50%; height: 50%"/>
 </p>
 
 ---
