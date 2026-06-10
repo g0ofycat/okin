@@ -77,7 +77,14 @@ int main(int argc, char** argv) {
 #else
 
 int main(int argc, char** argv) {
-	if (argc < 2) return 1;
+	if (argv[1] && strcmp(argv[1], "-help") == 0) {
+		printf("Usage: okin <source_code> [flags...]\n\nFlag list:\n\n-d : Enable print debugging based on the source code.\n-vm: Enable the Compiler and OVM (Okin Virtual Machine) pipeline to convert to true bytecode instead of interpreting, allowing for much faster code execution depending on the task.\n");
+		return 0;
+	}
+	if (argc < 2) {
+		printf("Okin: An LLM based programming language. (main - June 10th, 2026; v.1.0.0-ALPHA)\nType \"-help\" for more information.\n");
+		return 0;
+	}
 
 	bool use_vm = false;
 	bool debug = false;
