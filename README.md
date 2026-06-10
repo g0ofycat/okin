@@ -83,8 +83,8 @@ The following tests is a naive implementation of fib(25) without memoization
 - Without the **-vm** flag:
 
 ```
-g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;17<FIB,25>"
-2026-06-09T09:10:26-04:00
+g0ofycat@workspace:~/projects/okin$ ./build/okin_bench '16<FIB, N|112<85<N,1>|18<N>>; 18<64<17<FIB,65<N,2>>,17<FIB,65<N,1>>>>; >; 17<FIB,25>'
+2026-06-10T14:05:48-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)
 CPU Caches:
@@ -92,18 +92,19 @@ CPU Caches:
   L1 Instruction 32 KiB (x2)
   L2 Unified 1024 KiB (x2)
   L3 Unified 16384 KiB (x1)
-Load Average: 1.96, 1.10, 0.55
+Load Average: 0.84, 0.31, 0.12
 -----------------------------------------------------
 Benchmark           Time             CPU   Iterations
 -----------------------------------------------------
-BM_okin     488080633 ns    505805024 ns            2
+BM_okin     312515571 ns    312519192 ns            2
+g0ofycat@workspace:~/projects/okin$
 ```
 
 - With the **-vm** flag:
 
 ```
-g0ofycat@workspace:~/projects/okin$ ./build/okin_bench "16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;17<FIB,25>" -vm
-2026-06-09T09:08:46-04:00
+g0ofycat@workspace:~/projects/okin$ ./build/okin_bench '16<FIB, N|112<85<N,1>|18<N>>; 18<64<17<FIB,65<N,2>>,17<FIB,65<N,1>>>>; >; 17<FIB,25>' -vm
+2026-06-10T14:09:33-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)
 CPU Caches:
@@ -111,9 +112,10 @@ CPU Caches:
   L1 Instruction 32 KiB (x2)
   L2 Unified 1024 KiB (x2)
   L3 Unified 16384 KiB (x1)
-Load Average: 1.70, 0.74, 0.39
+Load Average: 1.06, 0.72, 0.33
 -----------------------------------------------------
 Benchmark           Time             CPU   Iterations
 -----------------------------------------------------
-BM_okin_vm   37182748 ns     37131938 ns           20
+BM_okin_vm   19668391 ns     19640071 ns           36
+g0ofycat@workspace:~/projects/okin$
 ```
