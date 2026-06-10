@@ -47,7 +47,7 @@ typedef struct {
 	int            count;
 } globals_t;
 
-typedef struct vm_t {
+typedef struct {
 	arena_t        *arena;
 	vm_val_t       stack[VM_STACK_MAX];
 	int            stack_top;

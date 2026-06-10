@@ -448,8 +448,7 @@ static void op_ret(vm_t *vm, const instruction_t *inst)
 	vm_val_t retval = POP();
 	vm_call_frame_t *frame = &vm->frames[--vm->frame_count];
 
-	for (int i = 0; i <= frame->max_local; i++)
-		vm->stack_top = frame->stack_base;
+	vm->stack_top = frame->stack_base;
 
 	if (vm->frame_count > 0)
 		vm->frames[vm->frame_count - 1].local_ip = frame->return_ip;
@@ -865,11 +864,10 @@ halt:
 /// @param vm: VM instance
 void vm_free(vm_t *vm)
 {
-	for (int i = 0; i < vm->stack_top; i++)
-		for (int i = 0; i < VM_GLOBALS_CAP; i++) {
-			if (!vm->globals[i].occupied) continue;
-			free((char *)vm->globals[i].key);
-		}
+	for (int i = 0; i < VM_GLOBALS_CAP; i++) {
+		if (!vm->globals[i].occupied) continue;
+		free((char *)vm->globals[i].key);
+	}
 	arena_free(vm->arena);
 	free(vm);
 }
