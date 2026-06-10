@@ -10,6 +10,7 @@ extern "C" {
 #include "value.h"
 #include "opcode.h"
 #include "../compiler/chunk.h"
+#include "../util/arena.h"
 
 // ======================
 // -- CONSTS
@@ -46,7 +47,8 @@ typedef struct {
 	int            count;
 } globals_t;
 
-typedef struct {
+typedef struct vm_t {
+	arena_t        *arena;
 	vm_val_t       stack[VM_STACK_MAX];
 	int            stack_top;
 

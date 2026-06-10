@@ -76,7 +76,6 @@ static void vm_set_global(vm_t *vm, const char *key, size_t len, vm_val_t val)
 	global_entry_t *e = globals_find_slot(vm, key, len);
 
 	if (e->occupied) {
-		vm_val_release(&e->val);
 		e->val = val;
 		return;
 	}
@@ -166,7 +165,6 @@ static inline chunk_t *current_chunk(vm_t *vm) {
 static inline void op_load_const(vm_t *restrict vm, const instruction_t *restrict inst)
 {
 	vm_val_t v = current_chunk(vm)->constants[inst->a];
-	vm_val_retain(&v);
 	PUSH(v);
 }
 
@@ -177,7 +175,6 @@ static inline void op_load_const(vm_t *restrict vm, const instruction_t *restric
 static inline void op_load_local(vm_t *restrict vm, const instruction_t *restrict inst)
 {
 	vm_val_t v = CURRENT_FRAME()->locals[inst->a];
-	vm_val_retain(&v);
 	PUSH(v);
 }
 
@@ -191,7 +188,6 @@ static inline void op_store_local(vm_t *restrict vm, const instruction_t *restri
 	uint32_t a = inst->a;
 	frame->max_local = a > frame->max_local ? a : frame->max_local;
 	vm_val_t *slot = &frame->locals[a];
-	vm_val_release(slot);
 	*slot = POP();
 }
 
@@ -206,7 +202,6 @@ static inline void op_load_global(vm_t *restrict vm, const instruction_t *restri
 		vm_error("global lookup requires string identifier");
 	vm_val_t *val = vm_get_global(vm, name->str->data, name->str->len);
 	vm_val_t   v  = val ? *val : vm_val_nil();
-	vm_val_retain(&v);
 	PUSH(v);
 }
 
@@ -234,13 +229,6 @@ static void op_false(vm_t *vm, const instruction_t *inst) { PUSH(vm_val_bool(0))
 
 /// @brief Push nil onto the stack
 static void op_nil(vm_t *vm, const instruction_t *inst)   { PUSH(vm_val_nil()); }
-
-/// @brief Discard the top of stack
-static void op_pop(vm_t *vm, const instruction_t *inst)
-{
-	vm_val_t v = POP();
-	vm_val_release(&v);
-}
 
 /// @brief Binary arithmetic: pops b then a, pushes result
 /// @param vm: VM instance
@@ -447,7 +435,6 @@ static void op_call(vm_t *vm, const instruction_t *inst)
 
 	for (int i = 0; i < arg_count; i++) {
 		frame->locals[i] = vm->stack[frame->stack_base + 1 + i];
-		vm_val_retain(&frame->locals[i]);
 	}
 
 	vm->stack_top = frame->stack_base;
@@ -462,9 +449,7 @@ static void op_ret(vm_t *vm, const instruction_t *inst)
 	vm_call_frame_t *frame = &vm->frames[--vm->frame_count];
 
 	for (int i = 0; i <= frame->max_local; i++)
-		vm_val_release(&frame->locals[i]);
-
-	vm->stack_top = frame->stack_base;
+		vm->stack_top = frame->stack_base;
 
 	if (vm->frame_count > 0)
 		vm->frames[vm->frame_count - 1].local_ip = frame->return_ip;
@@ -482,10 +467,10 @@ static void op_ret(vm_t *vm, const instruction_t *inst)
 static void op_make_array(vm_t *vm, const instruction_t *inst)
 {
 	int count = inst->a;
-	vm_val_t arr = vm_val_array();
+	vm_val_t arr = vm_val_array(vm->arena);
 	for (int i = 0; i < count; i++) {
 		vm_val_t element = POP(); 
-		vm_array_push(arr.arr, element);
+		vm_array_push(vm->arena, arr.arr, element);
 	}
 	PUSH(arr);
 }
@@ -500,8 +485,6 @@ static void op_array_get(vm_t *vm, const instruction_t *inst)
 	if (idx.type != VM_INT)   vm_error("array index must be integer");
 	if (idx.i < 0 || idx.i >= arr.arr->len) vm_error("array index out of bounds");
 	vm_val_t v = arr.arr->items[idx.i];
-	vm_val_retain(&v);
-	vm_val_release(&arr);
 	PUSH(v);
 }
 
@@ -514,9 +497,7 @@ static void op_array_set(vm_t *vm, const instruction_t *inst)
 	if (arr.type != VM_ARRAY) vm_error("array_set on non-array");
 	if (idx.type != VM_INT)   vm_error("array index must be integer");
 	if (idx.i < 0 || idx.i >= arr.arr->len) vm_error("array index out of bounds");
-	vm_val_release(&arr.arr->items[idx.i]);
 	arr.arr->items[idx.i] = val;
-	vm_val_release(&arr);
 }
 
 /// @brief Membership check: pops array then item, pushes bool
@@ -528,12 +509,10 @@ static void op_in(vm_t *vm, const instruction_t *inst)
 	if (arr.type != VM_ARRAY) vm_error("'in' requires array");
 	for (int i = 0; i < arr.arr->len; i++) {
 		if (val_equal(&item, &arr.arr->items[i])) {
-			vm_val_release(&arr);
 			PUSH(vm_val_bool(1));
 			return;
 		}
 	}
-	vm_val_release(&arr);
 	PUSH(vm_val_bool(0));
 }
 
@@ -548,7 +527,6 @@ static void op_io_write(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t v = POP();
 	val_print(&v);
-	vm_val_release(&v);
 }
 
 /// @brief Write top of stack to stdout with newline, pops value
@@ -559,7 +537,6 @@ static void op_io_writeln(vm_t *vm, const instruction_t *inst)
 	vm_val_t v = POP();
 	val_print(&v);
 	printf("\n");
-	vm_val_release(&v);
 }
 
 /// @brief Read a line from stdin, store into global named by constant[a]
@@ -573,7 +550,7 @@ static void op_io_read(vm_t *vm, const instruction_t *inst)
 	if (len > 0 && buf[len - 1] == '\n') buf[--len] = '\0';
 	vm_val_t *name = &vm->chunk->constants[inst->a];
 	if (name->type != VM_STR || !name->str) vm_error("io_read target variable key must be string");
-	vm_set_global(vm, name->str->data, name->str->len, vm_val_str(buf, len));
+	vm_set_global(vm, name->str->data, name->str->len, vm_val_str(vm->arena, buf, len));
 }
 
 // ======================
@@ -588,7 +565,6 @@ static void op_str_len(vm_t *vm, const instruction_t *inst)
 	vm_val_t s = POP();
 	if (s.type != VM_STR || !s.str) vm_error("str_len on non-string");
 	int64_t len = (int64_t)s.str->len;
-	vm_val_release(&s);
 	PUSH(vm_val_int(len));
 }
 
@@ -604,8 +580,7 @@ static void op_str_concat(vm_t *vm, const instruction_t *inst)
 	memcpy(buf, a.str->data, la);
 	memcpy(buf + la, b.str->data, lb);
 	buf[la + lb] = '\0';
-	vm_val_release(&a); vm_val_release(&b);
-	vm_val_t result = vm_val_str(buf, la + lb);
+	vm_val_t result = vm_val_str(vm->arena, buf, la + lb);
 	free(buf);
 	PUSH(result);
 }
@@ -621,8 +596,7 @@ static void op_str_slice(vm_t *vm, const instruction_t *inst)
 	int64_t slen = (int64_t)s.str->len;
 	int64_t lo   = start.i, hi = end.i;
 	if (lo < 0 || hi > slen || lo > hi) vm_error("str_slice out of bounds");
-	vm_val_t result = vm_val_str(s.str->data + lo, (size_t)(hi - lo));
-	vm_val_release(&s);
+	vm_val_t result = vm_val_str(vm->arena, s.str->data + lo, (size_t)(hi - lo));
 	PUSH(result);
 }
 
@@ -635,7 +609,6 @@ static void op_str_find(vm_t *vm, const instruction_t *inst)
 	if (s.type != VM_STR || pat.type != VM_STR || !s.str || !pat.str) vm_error("str_find on non-string");
 	char    *found = strstr(s.str->data, pat.str->data);
 	int64_t  idx   = found ? (int64_t)(found - s.str->data) : -1;
-	vm_val_release(&s); vm_val_release(&pat);
 	PUSH(vm_val_int(idx));
 }
 
@@ -653,8 +626,7 @@ static inline void op_str_transform(vm_t *vm, int (*transform_fn)(int))
 		buf[i] = (char)transform_fn((unsigned char)s.str->data[i]);
 	}
 
-	vm_val_release(&s);
-	vm_val_t result = vm_val_str(buf, len);
+	vm_val_t result = vm_val_str(vm->arena, buf, len);
 	free(buf);
 	PUSH(result);
 }
@@ -750,6 +722,7 @@ static void op_math_ceil(vm_t *vm, const instruction_t *inst)
 vm_t *vm_init(chunk_t *root)
 {
 	vm_t *vm = calloc(1, sizeof(vm_t));
+	vm->arena = arena_init();
 
 	vm_call_frame_t *frame = &vm->frames[vm->frame_count++];
 	frame->chunk = root;
@@ -846,7 +819,7 @@ op_store_global: op_store_global(vm, inst); NEXT();
 op_true:         op_true(vm, inst);         NEXT();
 op_false:        op_false(vm, inst);        NEXT();
 op_nil:          op_nil(vm, inst);          NEXT();
-op_pop:          op_pop(vm, inst);          NEXT();
+op_pop:          POP();                     NEXT();
 op_arith:        op_arith(vm, inst);        NEXT();
 op_cmp:          op_cmp(vm, inst);          NEXT();
 op_and:          op_and(vm, inst);          NEXT();
@@ -893,11 +866,10 @@ halt:
 void vm_free(vm_t *vm)
 {
 	for (int i = 0; i < vm->stack_top; i++)
-		vm_val_release(&vm->stack[i]);
-	for (int i = 0; i < VM_GLOBALS_CAP; i++) {
-		if (!vm->globals[i].occupied) continue;
-		vm_val_release(&vm->globals[i].val);
-		free((char *)vm->globals[i].key);
-	}
+		for (int i = 0; i < VM_GLOBALS_CAP; i++) {
+			if (!vm->globals[i].occupied) continue;
+			free((char *)vm->globals[i].key);
+		}
+	arena_free(vm->arena);
 	free(vm);
 }

@@ -6,6 +6,7 @@ extern "C" {
 #define COMPILER_H
 
 #include "../parser/parser.h"
+#include "../util/arena.h"
 
 #include "chunk.h"
 #include "scope.h"
@@ -57,6 +58,7 @@ typedef struct {
 
 typedef struct {
 	const parser_t *parser;
+	arena_t        *arena;
 	chunk_t        *root;
 	chunk_t        *current_scope;
 	scope_t        *scope;
