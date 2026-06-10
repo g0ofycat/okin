@@ -84,7 +84,7 @@ The following tests is a naive implementation of fib(25) without memoization
 
 ```
 g0ofycat@workspace:~/projects/okin$ ./build/okin_bench '16<FIB, N|112<85<N,1>|18<N>>; 18<64<17<FIB,65<N,2>>,17<FIB,65<N,1>>>>; >; 17<FIB,25>'
-2026-06-10T14:05:48-04:00
+2026-06-10T15:13:07-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)
 CPU Caches:
@@ -92,11 +92,11 @@ CPU Caches:
   L1 Instruction 32 KiB (x2)
   L2 Unified 1024 KiB (x2)
   L3 Unified 16384 KiB (x1)
-Load Average: 0.84, 0.31, 0.12
+Load Average: 0.12, 0.08, 0.07
 -----------------------------------------------------
 Benchmark           Time             CPU   Iterations
 -----------------------------------------------------
-BM_okin     312515571 ns    312519192 ns            2
+BM_okin     266153054 ns    266145117 ns            3
 g0ofycat@workspace:~/projects/okin$
 ```
 
@@ -104,7 +104,7 @@ g0ofycat@workspace:~/projects/okin$
 
 ```
 g0ofycat@workspace:~/projects/okin$ ./build/okin_bench '16<FIB, N|112<85<N,1>|18<N>>; 18<64<17<FIB,65<N,2>>,17<FIB,65<N,1>>>>; >; 17<FIB,25>' -vm
-2026-06-10T14:09:33-04:00
+2026-06-10T15:13:29-04:00
 Running ./build/okin_bench
 Run on (4 X 3493.49 MHz CPU s)
 CPU Caches:
@@ -112,10 +112,10 @@ CPU Caches:
   L1 Instruction 32 KiB (x2)
   L2 Unified 1024 KiB (x2)
   L3 Unified 16384 KiB (x1)
-Load Average: 1.06, 0.72, 0.33
+Load Average: 0.14, 0.09, 0.07
 -----------------------------------------------------
 Benchmark           Time             CPU   Iterations
 -----------------------------------------------------
-BM_okin_vm   19668391 ns     19640071 ns           36
+BM_okin_vm   15071215 ns     15068650 ns           46
 g0ofycat@workspace:~/projects/okin$
 ```
