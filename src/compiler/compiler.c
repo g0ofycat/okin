@@ -795,6 +795,7 @@ void compiler_run(compiler_t *c)
 void compiler_free(compiler_t *c)
 {
 	scope_free(c->scope);
+	chunk_free(c->root);
 	arena_free(c->arena);
 	free(c);
 }
