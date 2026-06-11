@@ -240,30 +240,37 @@
 				the base OVM.</a></p>
 		<p>For some reason I lied at the end of the video saying it worked on Windows, my interpreter just didn't work
 			because some feature I added the day before messed something up.</p>
-		<h2>Problems with Okin</h2>
-		<p><b><i>It's too simple. That's literally it.</i></b>
-			I could add more abstractions, libraries, and features to make it more token efficient but LLM programming
-			languages should be opinionated to reduce the chances of hallucination.
+		<h2>Spiral of Optimizations</h2>
+		<p>
+			Like any other project, I added some optimizations to the pipeline but this one is the most notable. I ran a
+			speed test comparing how fast the OVM can calculate Fib(25) with the exact same python setup.
+			Do you want to know what ran faster? If you guessed Okin, you're wrong. <b>~0.01964 seconds</b> is what it
+			took for Okin. Python? <b>~0.01914 seconds</b>. As any other rational low level programmer, I was absolutely
+			furious.
+		<p align="center">
+			<img style='border:2px solid #000000' img src="./media_webpage/02_callgrind.png" alt="callgrind" width="50%"
+				height="50%" />
+		<p>I
+			thought I had to do some crazy inline ASM or some magic to squeeze out the last of my optimizations. Did I
+			do it? Did I do some crazy SIMD magic or some low level fuckery with gcc? I wanted to because
+			it looks and sounds complex and smart, but then I remember the words of HIM: "An idiot admires complexity, a
+			genius admires simplicity, a physicist tries to make it simple, for an idiot anything the more complicated
+			it is the more he will admire it, if you make something so clusterfucked he can't understand it he's gonna
+			think you're a god cause you made it so complicated nobody can understand it. That's how they write journals
+			in Academics, they try to make it so complicated people think you're a genius". So, I just settled for the
+			simple option. The most called functions were the <i>retain</i> and <i>release</i> functions which basically
+			just manage heap allocated objects in my OVM (only strings and arrays). This, obviously uses <i>malloc</i>
+			which is pretty unperformant as we all know. I just used my arena allocator that i used in my parser to
+			allocate bytes there instead. Boring, I know. The result? <b>~0.01507</b> seconds. <b>LETS FUCKING GO.</b>
+			🥳🎉 I made my language faster than a language that allocates integer data types to the heap instead of the
+			stack!
+		</p>
+		</p>
 		</p>
 		<h2>Closing</h2>
-		<p>On a more personal note about my thoughts on this project and Software Engineering / AI in general,
-			<i>i'm a recreational programming and none of my projects should really be taken seriously</i>,
-			but it's so disheartening to see people who only care about the money you can make from programming and how
-			they
-			focus on
-			being another cog in the system for FAANG or other Big Tech instead of being passionate. The Software
-			Engineering field is full of plumbers and frauds, who can only glue together API's together and cannot code
-			without the
-			external help of something like AI, which is fine except they don't even bother to get better. And they
-			don't stop, they
-			just keep circlejerking their ego's which will affect the future generation of programmers. If there even is
-			a future for programming, there will not be a single hint of talent, let alone willing people who are good
-			enough at programming and are willing to teach others. "Talent" will become the work of the mediocre today
-			in 10 years. The baseline for skill keeps getting lower and lower, and I hate to say it, but some "SOTA"
-			LLM's
-			are genuinely better compared to 99% of CS graduates. <s><b>There is no use for you in CS if you can't
-					outclass AI in a
-					single subject.</b></s>
+		<p>Lets talk about the issues with Okin. <b><i>It's too simple. That's literally it.</i></b>
+			I could add more abstractions, libraries, and features to make it more token efficient but LLM programming
+			languages should be opinionated to reduce the chances of hallucination.
 		</p>
 	</main>
 
