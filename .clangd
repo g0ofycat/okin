@@ -11,4 +11,4 @@ CompileFlags:
 If:
   PathMatch: .*\.c
 CompileFlags:
-  Add: ["-std=c11"]
+  Add: ["-std=gnu11"]

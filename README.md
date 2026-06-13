@@ -72,6 +72,36 @@ Variables are dynamically typed. Type is inferred on assignment and can change o
 - Outer variables are **readable** from inner scopes
 - Outer variables are only **writable** from inner scopes when explicitly marked with `GLOBAL`
 
+## Config System (--config)
+
+Okin includes a lightweight preprocessor that allows symbolic aliases to be mapped directly to opcodes or library calls. This is handled through the `--config` flag.
+
+### Format
+
+--config "ALIAS=VALUE;ALIAS=VALUE;..."
+
+Each entry maps a readable keyword to a raw opcode or expanded instruction.
+
+### Example
+
+--config "PRINT=192~WRITELN"
+
+### How it works
+
+Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values. This allows writing more readable programs without changing the underlying Okin syntax.
+
+For example:
+
+PRINT<"Hello, World!">
+
+becomes:
+
+192~WRITELN<"Hello, World!">
+
+### Design goal
+
+Okin biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with <>; bloating token usage. It's main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
+
 ## VM Flag
 
 For faster code execution *(~10-20x speed)*, use the **"-vm"** flag to go from: Walking an AST and then running line by line; to instead compiling the parsed tokens, and then using a VM to execute actual bytecode (not Okin) to make execution much faster.

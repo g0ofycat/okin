@@ -1,3 +1,4 @@
+#include "../src/preprocessor/okin_config.h"
 #include "../src/lexer/lexer.h"
 #include "../src/parser/parser.h"
 #include "../src/interpreter/interpreter.hpp"
@@ -54,23 +55,29 @@ int main(int argc, char** argv) {
 
 	bool use_vm = false;
 	const char *src = nullptr;
-
+	const char *config_arg = nullptr;
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-vm") == 0) use_vm = true;
+		else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) config_arg = argv[++i];
 		else src = argv[i];
 	}
 
 	if (!src) return 1;
 
+	okin_config_t cfg;
+	bool has_config = config_arg ? okin_config_load(&cfg, config_arg) : okin_config_load_cache(&cfg);
+	char *expanded = has_config ? okin_config_expand(&cfg, src) : nullptr;
+	const char *final_src = expanded ? expanded : src;
 
 #ifdef USE_VM
 	if (use_vm)
-		benchmark::RegisterBenchmark("BM_okin_vm", BM_okin_vm, src);
+		benchmark::RegisterBenchmark("BM_okin_vm", BM_okin_vm, final_src);
 	else
 #endif
-		benchmark::RegisterBenchmark("BM_okin", BM_okin, src);
+		benchmark::RegisterBenchmark("BM_okin", BM_okin, final_src);
 
 	benchmark::RunSpecifiedBenchmarks();
+	free(expanded);
 	return 0;
 }
 
@@ -78,7 +85,7 @@ int main(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 	if (argv[1] && strcmp(argv[1], "-help") == 0) {
-		printf("Usage: okin <source_code> [flags...]\n\nFlag list:\n\n-d : Enable print debugging based on the source code.\n-vm: Enable the Compiler and OVM (Okin Virtual Machine) pipeline to convert to true bytecode instead of interpreting, allowing for much faster code execution depending on the task.\n");
+		printf("Usage: okin <source_code> [flags...]\n\nFlag list:\n\n-d : Enable print debugging based on the source code.\n-vm: Enable the Compiler and OVM (Okin Virtual Machine) pipeline to convert to true bytecode instead of interpreting, allowing for much faster code execution depending on the task.\n--config <file|toml>: Load opcode mappings for compact <> syntax; cached in .okin_config_cache for future runs.\n");
 		return 0;
 	}
 	if (argc < 2) {
@@ -90,16 +97,22 @@ int main(int argc, char** argv) {
 	bool debug = false;
 
 	const char *src = nullptr;
-
+	const char *config_arg = nullptr;
 	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-vm") == 0)     use_vm = true;
-		else if (strcmp(argv[i], "-d") == 0) debug  = true;
+		if (strcmp(argv[i], "-vm") == 0)          use_vm = true;
+		else if (strcmp(argv[i], "-d") == 0)      debug  = true;
+		else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) config_arg = argv[++i];
 		else src = argv[i];
 	}
 
 	if (!src) return 1;
 
-	lexer_t* lex = lexer_init(src);
+	okin_config_t cfg;
+	bool has_config = config_arg ? okin_config_load(&cfg, config_arg) : okin_config_load_cache(&cfg);
+	char *expanded = has_config ? okin_config_expand(&cfg, src) : nullptr;
+	const char *final_src = expanded ? expanded : src;
+
+	lexer_t* lex = lexer_init(final_src);
 	lexer_run(lex);
 	if (debug) lexer_print(lex);
 	parser_t* parse = parser_init(lex);
@@ -115,6 +128,7 @@ int main(int argc, char** argv) {
 			compiler_free(c);
 			parser_free(parse);
 			lexer_free(lex);
+			free(expanded);
 			return 1;
 		}
 		vm_t* vm = vm_init(c->root);
@@ -130,7 +144,7 @@ int main(int argc, char** argv) {
 
 	parser_free(parse);
 	lexer_free(lex);
-
+	free(expanded);
 	return 0;
 }
 

@@ -9,6 +9,7 @@ option(USE_VM "Enable VM backend" OFF)
 find_package(benchmark CONFIG REQUIRED HINTS "/usr/local")
 
 set(OKIN_SOURCES
+	src/preprocessor/okin_config.c
 	src/lexer/lexer.c
 	src/parser/parser.c
 	src/util/arena.c
@@ -17,6 +18,7 @@ set(OKIN_SOURCES
 )
 
 set(OKIN_INCLUDES
+	src/preprocessor
 	src/opcodes
 	src/lexer
 	src/parser
