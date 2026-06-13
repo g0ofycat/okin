@@ -46,7 +46,7 @@ void okin_config_save_cache(const okin_config_t *cfg);
 /// @return int: 1 on success, 0 if no cache exists or it's empty
 int okin_config_load_cache(okin_config_t *cfg);
 
-/// @brief Replace alias identifiers with their opcode equivalent, wrapping the following arguments in <> up to the next ';' or '|'
+/// @brief Replace alias identifiers with their opcode equivalent
 /// @param cfg: Config instance with alias -> opcode mappings
 /// @param source: Source code using custom alias keywords
 /// @return char*: Heap-allocated expanded source (caller must free), or NULL on allocation failure

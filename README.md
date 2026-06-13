@@ -78,13 +78,17 @@ Okin includes a lightweight preprocessor that allows symbolic aliases to be mapp
 
 ### Format
 
---config "ALIAS=VALUE;ALIAS=VALUE;..."
+```
+--config $"ALIAS=VALUE\nALIAS=VALUE\n..."
+```
 
 Each entry maps a readable keyword to a raw opcode or expanded instruction.
 
 ### Example
 
+```
 --config "PRINT=192~WRITELN"
+```
 
 ### How it works
 
@@ -92,11 +96,15 @@ Before parsing, the source code is scanned and all matching identifiers are repl
 
 For example:
 
+```
 PRINT<"Hello, World!">
+```
 
 becomes:
 
+```
 192~WRITELN<"Hello, World!">
+```
 
 ### Design goal
 

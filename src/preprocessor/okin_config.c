@@ -164,7 +164,7 @@ int okin_config_load_cache(okin_config_t *cfg) {
 	return ok;
 }
 
-/// @brief Replace alias identifiers with their opcode equivalent, wrapping the following arguments in <> up to the next ';' or '|'
+/// @brief Replace alias identifiers with their opcode equivalent
 /// @param cfg: Config instance with alias -> opcode mappings
 /// @param source: Source code using custom alias keywords
 /// @return char*: Heap-allocated expanded source (caller must free), or NULL on allocation failure
