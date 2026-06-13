@@ -92,7 +92,7 @@ Each entry maps a readable keyword to a raw opcode or expanded instruction.
 
 ### How it works
 
-Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values. This allows writing more readable programs without changing the underlying Okin syntax.
+Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values.
 
 For example:
 
@@ -108,7 +108,7 @@ becomes:
 
 ### Design goal
 
-Okin biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with <>; bloating token usage. It's main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
+Okin's biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with <>; bloating token usage. Its main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
 
 ## VM Flag
 
