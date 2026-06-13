@@ -87,7 +87,10 @@ Each entry maps a readable keyword to a raw opcode or expanded instruction.
 ### Example
 
 ```
---config "PRINT=192~WRITELN"
+--config "ALIAS=VALUE
+ALIAS=VALUE
+ALIAS=VALUE
+..."
 ```
 
 ### How it works
