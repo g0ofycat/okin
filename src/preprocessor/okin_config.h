@@ -39,15 +39,14 @@ typedef struct {
 // -- CONFIG
 // ======================
 
+/// @brief Look up metadata for a raw opcode string
+/// @param opcode: Raw opcode string (e.g. "192~WRITELN", "64")
+/// @return const okin_opcode_info_t*: Matching entry, or NULL if not found
+const okin_opcode_info_t *okin_opcode_lookup(const char *opcode);
+
 /// @brief Load a config from a file path or raw text, and cache it
 /// @param cfg: Config instance to populate
 /// @param arg: File path or raw config string
-/// @return int: 1 on success, 0 if no entries were parsed
-const okin_opcode_info_t *okin_opcode_lookup(const char *opcode);
-
-/// @brief Load a config from a TOML file path, or raw TOML text if the path doesn't exist
-/// @param cfg: Config instance to populate
-/// @param arg: File path or raw TOML string (from --config), entries formatted as "alias=opcode" or "alias=opcode~method"
 /// @return int: 1 on success, 0 if no entries were parsed
 int okin_config_load(okin_config_t *cfg, const char *arg);
 
