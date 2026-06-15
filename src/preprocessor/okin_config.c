@@ -275,18 +275,22 @@ static int expand_call(const okin_config_t *cfg, const okin_config_entry_t *entr
 			if (info->arity == -1) {
 				if (!source[*i] || source[*i] == '\n' || source[*i] == '\r' || source[*i] == ';') break;
 			} else if (argc >= info->arity) break;
+
 			if (argc > 0) EMITC(',');
 			if (!expand_arg(cfg, source, i, out, out_len, cap)) return 0;
 		}
 	}
 
 	if (info->has_body) {
-		EMITC('|');
+		EMITC(info->arity == 0 ? '<' : '|');
 		*i = skip_sep(source, *i);
 		if (!expand_block(cfg, source, i, out, out_len, cap, 1)) return 0;
+
+		while (*out_len > 0 && strchr(";\n\r \t", (*out)[*out_len - 1]))
+			(*out_len)--;
 	}
 
-	if (info->arity != 0) EMITC('>');
+	EMITC('>');
 	return 1;
 }
 

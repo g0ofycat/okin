@@ -94,24 +94,39 @@ ALIAS=VALUE
 ```
 
 ### How it works
+Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values. Previously, aliasing required the alias to already be wrapped in the target opcode's full syntax, including `<>`, `|`, and `;` where applicable. The preprocessor now expands aliases structurally: it looks up each opcode's arity and whether it takes a body, then generates the correct `<...>`, `|`, and `;` delimiters automatically based on the surrounding arguments and block.
 
-Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values.
+This means aliases can be written as plain, delimiter-free statements, and the preprocessor fills in the rest. For example:
 
-For example:
-
-```
-PRINT<"Hello, World!">
-```
-
-becomes:
+--config:
 
 ```
-192~WRITELN<"Hello, World!">
+IF=112
+EQ=80
+ELSE=114
+
+PRINT=192~WRITELN
 ```
+
+writing:
+
+```
+IF EQ X 5
+    PRINT "five"
+ELSE
+    PRINT "not five"
+END
+```
+
+expands to:
+```
+112<80<X,5>|192~WRITELN<"five">>;114<192~WRITELN<"not five">>;
+```
+
+with no `<>`, `|`, `;`, or `END` needed in the source, the preprocessor infers nesting, argument counts, and block boundaries from each alias's opcode metadata and closes everything correctly on its own.
 
 ### Design goal
-
-Okin's biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with <>; bloating token usage. Its main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
+Okin's biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with `<>`, bloating token usage. Its main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
 
 ## VM Flag
 
