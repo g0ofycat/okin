@@ -267,6 +267,38 @@
 		</p>
 		</p>
 		</p>
+		<h2>Custom Keywords</h2>
+		<p>
+			When I was finalizing the OVM and about to just move on to another project, I realized that it's not token
+			efficient despite that being the entire part of an
+			LLM based programming language?
+		<p align="center">
+			<img style='border:2px solid #000000' img src="./media_webpage/03_okin_uncompressed.png" alt="callgrind"
+				width="50%" height="50%" />
+		<p>
+		<p align="center">
+			<img style='border:2px solid #000000' img src="./media_webpage/04_py_tokens.png" alt="callgrind" width="50%"
+				height="50%" />
+		<p>
+			The main reason for it is because it has so many delimiters like pipes, less
+			than and greater than brackets, and semicolons. I was thinking a way to make it so that I don't have to
+			either scrap the entire project or rewrite the entire syntax. I decided to make a questionable choice and
+			make the LLM have the option to define its own keywords based on a configuration file. If this was any other
+			language then I would just scrap the idea, but the whole purpose of this project was to make LLM's do
+			computationally heavy tasks, plus the tasks wouldn't be too complex anyways. I decided to just make a
+			preprocessor pipeline where it doesn't need any delimiters except commas for variadic opcodes. Since we
+			already know if the opcode requires a body (a.k.a it needs a pipe), and the arity of the opcode, we can just
+			easily consume and emit certain characters. Result:
+		<p align="center">
+			<img style='border:2px solid #000000' img src="./media_webpage/05_okin_compressed.png" alt="callgrind"
+				width="50%" height="50%" />
+		<p>
+			It compiles nicely too:
+		<p align="center">
+			<img style='border:2px solid #000000' img src="./media_webpage/06_okin_output.png" alt="callgrind"
+				width="50%" height="50%" />
+		<p>
+		</p>
 		<h2>Closing</h2>
 		<p>Lets talk about the issues with Okin. <b><i>It's too simple. That's literally it.</i></b>
 			I could add more abstractions, libraries, and features to make it more token efficient but LLM programming

@@ -123,7 +123,7 @@ expands to:
 16<FIB,N|112<85<N,1>|18<N>>;18<64<17<FIB,65<N,2>>,17<FIB,65<N,1>>>>>;192~WRITELN<17<FIB,10>>;
 ```
 
-with no `<>`, `|`, `;`, or `END` needed in the source (although, a comma is needed for varadics), the preprocessor infers nesting, argument counts, and block boundaries from each alias's opcode metadata and closes everything correctly on its own.
+with no `<>`, `|`, `;`, or `END` needed in the source (although, a comma is needed for variadics), the preprocessor infers nesting, argument counts, and block boundaries from each alias's opcode metadata and closes everything correctly on its own.
 
 ### Design goal
 Okin's biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with `<>`, bloating token usage. Its main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
