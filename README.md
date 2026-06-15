@@ -94,7 +94,7 @@ ALIAS=VALUE
 ```
 
 ### How it works
-Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values. Previously, aliasing required the alias to already be wrapped in the target opcode's full syntax, including `<>`, `|`, and `;` where applicable. The preprocessor now expands aliases structurally: it looks up each opcode's arity and whether it takes a body, then generates the correct `<...>`, `|`, and `;` delimiters automatically based on the surrounding arguments and block.
+Before parsing, the source code is scanned and all matching identifiers are replaced with their configured values. The preprocessor expands aliases structurally: it looks up each opcode's arity and whether it takes a body, then generates the correct `<...>`, `|`, and `;` delimiters automatically based on the surrounding arguments and block.
 
 This means aliases can be written as plain, delimiter-free statements, and the preprocessor fills in the rest. For example:
 
