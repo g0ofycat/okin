@@ -274,15 +274,11 @@ static int expand_call(const okin_config_t *cfg, const okin_config_entry_t *entr
 				if (source[*i] == ',') {
 					(*i)++;
 					*i = skip_ws(source, *i);
-				} else if (info->arity == -1) {
-					break;
-				}
+				} else if (info->arity == -1) break;
 			}
 			if (info->arity == -1) {
 				if (!source[*i] || source[*i] == '\n' || source[*i] == '\r' || source[*i] == ';') break;
-			} else if (argc >= info->arity) {
-				break;
-			}
+			} else if (argc >= info->arity) break;
 			if (argc > 0) EMITC(',');
 			if (!expand_arg(cfg, source, i, out, out_len, cap)) return 0;
 		}
