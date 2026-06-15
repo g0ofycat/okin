@@ -66,7 +66,7 @@ static const okin_opcode_info_t opcode_table[] = {
 	{ "208~SLICE",   3, 0 },
 	{ "208~FIND",    2, 0 },
 	{ "208~UPPER",   1, 0 },
-	{ "208~LOWER",   2, 0 },
+	{ "208~LOWER",   1, 0 },
 
 	{ "224~POW",     2, 0 },
 	{ "224~SQRT",    1, 0 },

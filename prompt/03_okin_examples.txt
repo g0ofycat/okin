@@ -2,68 +2,6 @@ OKIN: Examples (3/3)
 
 SYNTAX: <opcode><args>; opcode is integer, args comma-separated
 
-OPCODES
-
-2 VAR 2<name,value> declare & assign
-3 SET 3<name,value> update variable
-4 GLOBAL 4<name> mark global in function
-16 FUNCTION 16<name|body> define function
-17 CALL 17<name,arg1,arg2...> call function
-
-18 RET 18<value> return from function
-32 FOR 32<I,start,end,step|body> loop (end exclusive)
-33 WHILE 33<condition|body> while loop
-34 BREAK 34<label> break from loop
-48 ARRAY 2<ARR,48<v1,v2,v3>> array (expression-only)
-
-49 IN 2<FOUND,49<val,ARR>> membership (expression-only)
-50 INDEX 50<ARR,idx,DEST> get element
-
-51 SET_IDX 51<ARR,idx,val> set element
-64 ADD 64<A,B,DEST> A+B: DEST
-65 SUB 65<A,B,DEST> A-B: DEST
-66 MUL 66<A,B,DEST> A*B: DEST
-67 DIV 67<A,B,DEST> A/B: DEST
-68 MOD 68<A,B,DEST> A%B: DEST
-80 EQ 80<A,B> A==B
-81 NE 81<A,B> A!=B
-82 GT 82<A,B> A>B
-
-83 LT 83<A,B> A<B
-84 GTE 84<A,B> A>=B
-85 LTE 85<A,B> A<=B
-96 AND 96<c1,c2> c1&&c2
-97 OR 97<c1,c2> c1||c2
-98 NOT 98<c> !c
-112 IF 112<condition|body> if
-113 ELIF 113<condition|body> elif
-114 ELSE 114|body else (no condition)
-
-144 GOTO 144<label> goto
-192 WRITE 192~WRITELN<val> print+newline
-208 STRING 208~METHOD<args,DEST> string ops
-224 MATH 224~METHOD<args,DEST> math ops
-STRING METHODS
-FIND 208~FIND<string,substring,DEST>
-LEN 208~LEN<string,DEST>
-UPPER 208~UPPER<string,DEST>
-LOWER 208~LOWER<string,DEST>
-SLICE 208~SLICE<string,start,end,DEST>
-CONCAT 208~CONCAT<str1,str2,DEST>
-MATH METHODS
-POW 224~POW<base,exp,DEST>
-SQRT 224~SQRT<num,DEST>
-ABS 224~ABS<num,DEST>
-MIN 224~MIN<a,b,DEST>
-MAX 224~MAX<a,b,DEST>
-FLOOR 224~FLOOR<num,DEST>
-CEIL 224~CEIL<num,DEST>
-LITERALS
-$N integer: $42, $100, $0
-@N.M float: @3.14, @2.5
-"text" string: "hello"
-\" escape: \"quote\"
-
 RULES
 
 1. DEST in arithmetic/string/math must pre-exist: 2<Z,0>;64<X,Y,Z>
@@ -71,7 +9,9 @@ RULES
 3. Loop variables pre-declare: 2<SUM,0>;32<I,1,11,1|64<SUM,I,SUM>>
 4. Chain ELIF/ELSE before IF: 113<...>; 112<...> or 114|...; 112<...>
 5. ELSE uses 114|body (no condition, no < >)
-TEST CASES (format: code: output)
+
+TEST CASES (number. code: output)
+
 1. 192~WRITELN<"Hello, World!">: Hello, World!
 
 2. 2<X,10>;192~WRITELN<X>: 10
