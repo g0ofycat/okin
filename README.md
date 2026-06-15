@@ -101,32 +101,48 @@ This means aliases can be written as plain, delimiter-free statements, and the p
 --config:
 
 ```
+FUNC=16
+CALL=17
+RETURN=18
 IF=112
-EQ=80
-ELSE=114
-
+LTE=85
+ADD=64
+SUB=65
 PRINT=192~WRITELN
 ```
 
 writing:
 
 ```
-IF EQ X 5
-    PRINT "five"
-ELSE
-    PRINT "not five"
-END
+FUNC FIB,N IF LTE N 1 RETURN N END RETURN ADD CALL FIB,SUB N 2 CALL FIB,SUB N 1 END PRINT CALL FIB,10
 ```
 
 expands to:
+
 ```
-112<80<X,5>|192~WRITELN<"five">>;114<192~WRITELN<"not five">>;
+16<FIB,N|112<85<N,1>|18<N>>;18<64<17<FIB,65<N,2>>,17<FIB,65<N,1>>>>>;192~WRITELN<17<FIB,10>>;
 ```
 
-with no `<>`, `|`, `;`, or `END` needed in the source, the preprocessor infers nesting, argument counts, and block boundaries from each alias's opcode metadata and closes everything correctly on its own.
+with no `<>`, `|`, `;`, or `END` needed in the source (although, a comma is needed for varadics), the preprocessor infers nesting, argument counts, and block boundaries from each alias's opcode metadata and closes everything correctly on its own.
 
 ### Design goal
 Okin's biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with `<>`, bloating token usage. Its main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
+
+### Note
+
+Since the arity of each opcode is fixed, things with optional destinations (e.x. Arithmetic) exclude that destionation. To reassign them after an operation, you want to do something along the lines of:
+
+```
+VAR X, 2 SET X, SUB X, 1
+```
+
+where --config is:
+
+```
+VAR=2
+SET=3
+SUB=65
+```
 
 ## VM Flag
 

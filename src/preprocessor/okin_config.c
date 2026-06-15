@@ -31,13 +31,13 @@ static const okin_opcode_info_t opcode_table[] = {
 	{ "34",          1, 0 },
 	{ "48",         -1, 0 },
 	{ "49",          2, 0 },
-	{ "50",          3, 0 },
+	{ "50",          2, 0 },
 	{ "51",          3, 0 },
-	{ "64",          3, 0 },
-	{ "65",          3, 0 },
-	{ "66",          3, 0 },
-	{ "67",          3, 0 },
-	{ "68",          3, 0 },
+	{ "64",          2, 0 },
+	{ "65",          2, 0 },
+	{ "66",          2, 0 },
+	{ "67",          2, 0 },
+	{ "68",          2, 0 },
 	{ "80",          2, 0 },
 	{ "81",          2, 0 },
 	{ "82",          2, 0 },
@@ -61,22 +61,20 @@ static const okin_opcode_info_t opcode_table[] = {
 	{ "192~WRITE",   1, 0 },
 	{ "192~WRITELN", 1, 0 },
 
-	{ "208~LEN",     2, 0 },
-	{ "208~CONCAT",  3, 0 },
-	{ "208~SLICE",   4, 0 },
-	{ "208~FIND",    3, 0 },
-	{ "208~UPPER",   2, 0 },
-
+	{ "208~LEN",     1, 0 },
+	{ "208~CONCAT",  2, 0 },
+	{ "208~SLICE",   3, 0 },
+	{ "208~FIND",    2, 0 },
+	{ "208~UPPER",   1, 0 },
 	{ "208~LOWER",   2, 0 },
-	{ "208~REPLACE", 4, 0 },
-	{ "224~POW",     3, 0 },
-	{ "224~SQRT",    2, 0 },
-	{ "224~ABS",     2, 0 },
-	{ "224~MIN",     3, 0 },
-	{ "224~MAX",     3, 0 },
-	{ "224~FLOOR",   2, 0 },
-	{ "224~CEIL",    2, 0 },
-	{ "224~ROUND",   2, 0 },
+
+	{ "224~POW",     2, 0 },
+	{ "224~SQRT",    1, 0 },
+	{ "224~ABS",     1, 0 },
+	{ "224~MIN",     2, 0 },
+	{ "224~MAX",     2, 0 },
+	{ "224~FLOOR",   1, 0 },
+	{ "224~CEIL",    1, 0 },
 
 	{ NULL, 0, 0 },
 };
@@ -163,12 +161,12 @@ static size_t emit(char **out, size_t *out_len, size_t *cap, const char *str, si
 	return 1;
 }
 
-/// @brief Skip spaces, tabs, and commas
+/// @brief Skip spaces and tabs
 /// @param src: Source string
 /// @param i: Current position
-/// @return size_t: Position after separators
-static size_t skip_sep(const char *src, size_t i) {
-	while (src[i] == ' ' || src[i] == '\t' || src[i] == ',') i++;
+/// @return size_t: Position after whitespace
+static size_t skip_ws(const char *src, size_t i) {
+	while (src[i] == ' ' || src[i] == '\t') i++;
 	return i;
 }
 
@@ -271,11 +269,20 @@ static int expand_call(const okin_config_t *cfg, const okin_config_entry_t *entr
 	if (info->arity != 0) {
 		EMITC('<');
 		for (int argc = 0; ; argc++) {
-			*i = skip_sep(source, *i);
+			*i = skip_ws(source, *i);
+			if (argc > 0) {
+				if (source[*i] == ',') {
+					(*i)++;
+					*i = skip_ws(source, *i);
+				} else if (info->arity == -1) {
+					break;
+				}
+			}
 			if (info->arity == -1) {
 				if (!source[*i] || source[*i] == '\n' || source[*i] == '\r' || source[*i] == ';') break;
-			} else if (argc >= info->arity) break;
-
+			} else if (argc >= info->arity) {
+				break;
+			}
 			if (argc > 0) EMITC(',');
 			if (!expand_arg(cfg, source, i, out, out_len, cap)) return 0;
 		}
@@ -283,9 +290,8 @@ static int expand_call(const okin_config_t *cfg, const okin_config_entry_t *entr
 
 	if (info->has_body) {
 		EMITC(info->arity == 0 ? '<' : '|');
-		*i = skip_sep(source, *i);
+		*i = skip_ws(source, *i);
 		if (!expand_block(cfg, source, i, out, out_len, cap, 1)) return 0;
-
 		while (*out_len > 0 && strchr(";\n\r \t", (*out)[*out_len - 1]))
 			(*out_len)--;
 	}
@@ -303,7 +309,7 @@ static int expand_call(const okin_config_t *cfg, const okin_config_entry_t *entr
 /// @param cap
 /// @return int
 static int expand_arg(const okin_config_t *cfg, const char *source, size_t *i, char **out, size_t *out_len, size_t *cap) {
-	*i = skip_sep(source, *i);
+	*i = skip_ws(source, *i);
 
 	const okin_config_entry_t *entry = find_alias_at(cfg, source, *i);
 	if (entry) {

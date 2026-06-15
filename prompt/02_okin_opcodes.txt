@@ -73,7 +73,6 @@ STRING
 ~FIND<STR,PATTERN,DEST> first index of pattern (-1 if not found)
 ~UPPER<STR,DEST> uppercase
 ~LOWER<STR,DEST> lowercase
-~REPLACE<STR,OLD,NEW,DEST> replace all occurrences
 
 MATH
 0xE0 MATH 224~METHOD<args,DEST> math lib
@@ -84,7 +83,6 @@ MATH
 ~MAX<A,B,DEST> maximum of two values
 ~FLOOR<A,DEST> floor
 ~CEIL<A,DEST> ceiling
-~ROUND<A,DEST> round to nearest
 
 LITERALS
 $N integer: $42, $100, $0

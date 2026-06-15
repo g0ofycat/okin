@@ -38,8 +38,6 @@ OPCODES
 112 IF 112<condition|body> if
 113 ELIF 113<condition|body> elif
 114 ELSE 114|body else (no condition)
-128 LABEL 128<label> label
-129 GOTO_IF 129<cond,label> conditional goto
 
 144 GOTO 144<label> goto
 192 WRITE 192~WRITELN<val> print+newline
@@ -52,7 +50,6 @@ UPPER 208~UPPER<string,DEST>
 LOWER 208~LOWER<string,DEST>
 SLICE 208~SLICE<string,start,end,DEST>
 CONCAT 208~CONCAT<str1,str2,DEST>
-REPLACE 208~REPLACE<string,old,new,DEST>
 MATH METHODS
 POW 224~POW<base,exp,DEST>
 SQRT 224~SQRT<num,DEST>
@@ -61,7 +58,6 @@ MIN 224~MIN<a,b,DEST>
 MAX 224~MAX<a,b,DEST>
 FLOOR 224~FLOOR<num,DEST>
 CEIL 224~CEIL<num,DEST>
-ROUND 224~ROUND<num,DEST>
 LITERALS
 $N integer: $42, $100, $0
 @N.M float: @3.14, @2.5
