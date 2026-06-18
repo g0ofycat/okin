@@ -44,7 +44,7 @@ INITIAL_PROMPT = (
         "   BAD:  32<I,0,5,1|64<SUM,I,SUM>> (SUM undefined)\n"
         "   GOOD: 2<SUM,0>;32<I,0,5,1|64<SUM,I,SUM>>\n"
         "5. WHILE safety: Variable must change each iteration or loop infinitely\n"
-        "6. No comments: Remove all -- comments from code\n"
+        "6. No comments: Remove all # comments from code\n"
         "7. Output requirement: Every test case must end with 192~WRITELN to print result\n\n"
         "REQUIRED COVERAGE (at least one example of each):\n"
         "- Arithmetic ops: ADD(64), SUB(65), MUL(66), DIV(67), MOD(68)\n"

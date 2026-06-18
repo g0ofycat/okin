@@ -266,9 +266,9 @@ void lexer_run(lexer_t *l)
 		const char *start = l->src + l->pos;
 		char c = peek(l);
 
-		if (c == '-' && l->src[l->pos + 1] == '-')
+		if (c == '#')
 		{
-			while (peek(l) && peek(l) != '\n') advance(l);
+			while (peek(l) && peek(l) != '\n' && peek(l) != ';') advance(l);
 			continue;
 		}
 

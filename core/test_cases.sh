@@ -21,7 +21,7 @@ inputs=(
 	"2<STR, \"strawberry\">;2<COUNT, 0>;2<LEN, 0>;2<CH, \"\">;2<NEXT, 0>;208~LEN<STR, LEN>;32<I, 0, LEN, 1|64<I, 1, NEXT>;208~SLICE<STR, I, NEXT, CH>;112<80<CH, \"r\">|64<COUNT, 1, COUNT>>>;192~WRITELN<COUNT>"
 	"16<FIB, N|112<85<N,1>|18<N>>;2<A,0>;2<B,0>;2<N1,0>;2<N2,0>;2<R,0>;65<N,1,N1>;65<N,2,N2>;17<FIB,N1,A>;17<FIB,N2,B>;64<A,B,R>;18<R>>;192~WRITELN<17<FIB,10>>"
 	"2<n, 5>;16<inc_n|64<n,1,n>>;17<inc_n>;192~WRITELN<n>"
-	"-- COMMENT"
+	"# COMMENT"
 
 	"2<A, 10>;2<B, 3>;2<R, 0>;68<A, B, R>;192~WRITELN<R>"
 	"2<A, 7>;2<B, 6>;2<R, 0>;66<A, B, R>;192~WRITELN<R>"

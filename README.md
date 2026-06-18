@@ -42,7 +42,7 @@ Every instruction follows this schema:
 ### Nested blocks use `|` as a delimiter
 
 ```
-32<I, 0, 5, 1|192~WRITELN<I>>   -- for loop printing I from 0 to 4
+32<I, 0, 5, 1|192~WRITELN<I>>    # for loop printing I from 0 to 4
 ```
 
 ### Standard library calls use `~`
@@ -50,8 +50,8 @@ Every instruction follows this schema:
 ```
 <STD_LIB>~<METHOD><args>
 
-192~WRITELN<Hello, World>        -- IO lib, WRITELN method
-208~CONCAT<A, B, DEST>           -- String lib, CONCAT method
+192~WRITELN<Hello, World>        # IO lib, WRITELN method
+208~CONCAT<A, B, DEST>           # String lib, CONCAT method
 ```
 
 ---

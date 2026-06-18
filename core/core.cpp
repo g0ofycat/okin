@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 	if (argc < 2) {
-		printf("Okin: An LLM based programming language. (main - June 10th, 2026; v.1.0.0-ALPHA)\nType \"-help\" for more information.\n");
+		printf("Okin: An LLM based programming language. (main - June 18th, 2026; v.2.0.0-ALPHA)\nType \"-help\" for more information.\n");
 		return 0;
 	}
 

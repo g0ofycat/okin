@@ -12,7 +12,7 @@ and much more.
 
 Writing in Okin is meant to be linear and contiguous, meaning that you can write without no wasted tokens. To do so, entire programs in Okin can be written in 1 line, each instruction separated with a semicolon (;).
 
-You can also write comments by doing 2 dashes (--).
+You can also write comments by doing #.
 
 The effectiveness of Okin can be seen in smaller language models (<500M Parameters) that can be run locally, this isn't meant to help larger language models due to them being owned by companies which already have some sort of code execution framework in place.
 

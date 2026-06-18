@@ -9,7 +9,7 @@ You MUST NOT hardcode printed answers as strings. Compute them.
 You MUST wrap all Okin code in a fenced code block with backticks, exactly like this:
 
 ```okin
-2<A, 10>;2<B, 5>;2<R, 0>;64<A, B, R>;192~WRITELN<R> -- example: computes 10 + 5 and prints 15
+2<A, 10>;2<B, 5>;2<R, 0>;64<A, B, R>;192~WRITELN<R> # example: computes 10 + 5 and prints 15
 ```
 
 Never write okin without the backtick fences. The runtime cannot detect or execute unfenced code.
