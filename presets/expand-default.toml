@@ -1,0 +1,80 @@
+# -- GENERAL / MEMORY --
+FALSE    = 0
+TRUE     = 1
+VAR      = 2
+SET      = 3
+GLOBAL   = 4
+NIL      = 5
+
+# -- GENERAL / FUNCTIONS --
+FUNCTION = 16
+CALL     = 17
+RET      = 18
+
+# -- GENERAL / ITERATORS --
+FOR      = 32
+WHILE    = 33
+BREAK    = 34
+
+# -- GENERAL / DATA --
+ARRAY    = 48
+IN       = 49
+AGET     = 50
+ASET     = 51
+
+# -- ARITHMETIC --
+ADD      = 64
+SUB      = 65
+MUL      = 66
+DIV      = 67
+MOD      = 68
+
+# -- COMPARISON --
+EQ       = 80
+NEQ      = 81
+GT       = 82
+LT       = 83
+GTE      = 84
+LTE      = 85
+
+# -- LOGICAL --
+AND      = 96
+OR       = 97
+NOT      = 98
+
+# -- BRANCHING --
+IF       = 112
+ELIF     = 113
+ELSE     = 114
+
+# -- JUMPS / JUMP OPS --
+JMP      = 128
+JEQ      = 129
+JNE      = 130
+JGT      = 131
+JLT      = 132
+
+# -- JUMPS / LABELS --
+LABEL    = 144
+
+# -- STD LIBS / IO --
+READ     = 192~READ
+WRITE    = 192~WRITE
+WRITELN  = 192~WRITELN
+
+# -- STD LIBS / STRING --
+LEN      = 208~LEN
+CONCAT   = 208~CONCAT
+SLICE    = 208~SLICE
+FIND     = 208~FIND
+UPPER    = 208~UPPER
+LOWER    = 208~LOWER
+
+# -- STD LIBS / MATH --
+POW      = 224~POW
+SQRT     = 224~SQRT
+ABS      = 224~ABS
+MIN      = 224~MIN
+MAX      = 224~MAX
+FLOOR    = 224~FLOOR
+CEIL     = 224~CEIL

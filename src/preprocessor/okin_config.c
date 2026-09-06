@@ -117,10 +117,12 @@ static char *read_file(const char *path) {
 /// @brief Strip leading/trailing whitespace in place
 /// @param s: String to trim
 static void trim(char *s) {
-	while (*s == ' ' || *s == '\t') s++;
-	char *end = s + strlen(s);
-	while (end > s && (end[-1] == ' ' || end[-1] == '\t' || end[-1] == '\r')) end--;
+	char *start = s;
+	while (*start == ' ' || *start == '\t') start++;
+	char *end = start + strlen(start);
+	while (end > start && (end[-1] == ' ' || end[-1] == '\t' || end[-1] == '\r')) end--;
 	*end = '\0';
+	if (start != s) memmove(s, start, end - start + 1);
 }
 
 /// @brief Check if a character is valid in an identifier
