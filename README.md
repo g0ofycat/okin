@@ -125,6 +125,16 @@ expands to:
 
 with no `<>`, `|`, `;`, or `END` needed in the source (although, a comma is needed for variadics), the preprocessor infers nesting, argument counts, and block boundaries from each alias's opcode metadata and closes everything correctly on its own.
 
+### Included compact config
+
+The repository includes [`okin.config`](okin.config), which maps every opcode and standard-library method to a short lowercase alias. Load it explicitly with `--config okin.config`; for example:
+
+```
+okin "var x, 2 print x" --config okin.config
+```
+
+Aliases are selected to be concise and readable; whether each one is a single tokenizer token depends on the tokenizer used.
+
 ### Design goal
 Okin's biggest bottleneck in terms of token saving is its use of opcodes and wrapping instructions with `<>`, bloating token usage. Its main goal is to not only save tokens but also make Okin code more readable while also keeping the base language opinionated.
 
