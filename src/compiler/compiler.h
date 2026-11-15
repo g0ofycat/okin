@@ -70,6 +70,11 @@ typedef struct {
 	int             errors;
 } compiler_t;
 
+typedef struct {
+	const char *name;
+	vm_op_t     op;
+} method_entry_t;
+
 // ======================
 // -- COMPILER
 // ======================

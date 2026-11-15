@@ -4,7 +4,7 @@ project(okin LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-option(USE_VM "Enable VM backend" OFF)
+option(USE_VM "Enable VM backend" ON)
 
 find_package(benchmark CONFIG REQUIRED HINTS "/usr/local")
 

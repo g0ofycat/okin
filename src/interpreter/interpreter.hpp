@@ -86,10 +86,20 @@ inline std::string val_to_string(const okin_val_t &v) {
 								return std::get<bool>(v.data) ? "true" : "false";
 		case val_type_t::STR:
 								return std::get<std::string>(v.data);
-		case val_type_t::ARR:
-								return "[array]";
+		case val_type_t::ARR: {
+								  const auto &arr = std::get<okin_array_t>(v.data);
+								  std::string out = "[";
+								  if (arr) {
+									  for (size_t i = 0; i < arr->size(); i++) {
+										  if (i) out += ", ";
+										  out += val_to_string((*arr)[i]);
+									  }
+								  }
+								  out += "]";
+								  return out;
+							  }
 		case val_type_t::NIL_VAL:
-								return "nil";
+							  return "nil";
 	}
 	return UNK_VAL;
 }

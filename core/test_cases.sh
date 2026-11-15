@@ -4,7 +4,7 @@ exe_path="./build/okin"
 
 passed=0
 total=0
-use_vm=true
+use_vm=false
 
 inputs=(
 	"192~WRITELN<\"Hello, World!\">"
@@ -53,7 +53,7 @@ inputs=(
 	"112<98<81<1,1>>|192~WRITELN<\"not\">>"
 
 	"2<I, 0>;2<S, 0>;33<83<I,5>|64<S,I,S>;64<I,1,I>>;192~WRITELN<S>"
-	"2<I, 0>;33<83<I,10>|112<80<I,5>|34<$0>>;64<I,1,I>>;192~WRITELN<I>"
+	"2<I, 0>;33<83<I,10>|112<80<I,5>|34<\$0>>;64<I,1,I>>;192~WRITELN<I>"
 
 	"16<DOUBLE,X|2<R,0>;66<X,2,R>;18<R>>;16<QUAD,X|2<R,0>;17<DOUBLE,X,R>;17<DOUBLE,R,R>;18<R>>;192~WRITELN<17<QUAD,3,OUT>>"
 
@@ -66,6 +66,56 @@ inputs=(
 
 	"128<SKIP>;192~WRITELN<\"skipped\">;144<SKIP>;192~WRITELN<\"after\">"
 	"2<X,5>;129<X,5,HIT>;192~WRITELN<\"miss\">;144<HIT>;192~WRITELN<\"hit\">"
+
+	"2<ARR,48<10,20,30>>;2<V,0>;50<ARR,0,V>;192~WRITELN<V>"
+	"2<ARR,48<10,20,30>>;2<V,0>;50<ARR,2,V>;192~WRITELN<V>"
+	"2<ARR,48<1,2,3>>;192~WRITELN<ARR>"
+
+	"192~WRITE<\"a\">;192~WRITE<\"b\">;192~WRITELN<\"c\">"
+
+	"192~W<\"x\">"
+	"2<R,0>;208~L<\"hello\",R>;192~WRITELN<R>"
+
+	"16<F|192~WRITELN<\"side\">;18<1>>;112<96<81<1,1>,80<17<F>,1>>|192~WRITELN<\"yes\">>"
+	"16<F|192~WRITELN<\"side\">;18<1>>;112<97<80<1,1>,80<17<F>,1>>|192~WRITELN<\"yes\">>"
+
+	"112<80<1,1>|192~WRITELN<\"a\">>;112<80<2,2>|192~WRITELN<\"b\">>"
+
+	"2<R,0>;224~POW<2,20,R>;192~WRITELN<R>"
+
+	"112<82<9007199254740993,9007199254740992>|192~WRITELN<\"gt\">>"
+
+	"112<80<1,@1.0>|192~WRITELN<\"eq\">>"
+
+	"16<SHOW,V|192~WRITELN<V>>;17<SHOW,\$7>"
+
+	"2<S,0>;32<I,0,3,1|32<J,0,3,1|112<80<J,1>|34<\$0>>;64<S,1,S>>>;192~WRITELN<S>"
+
+	"192~WRITELN<17<F>>;16<F|18<7>>"
+	"16<F|2<X,1>>;192~WRITELN<17<F>>"
+
+	"192~WRITELN<\"a;b,c|d<e>\">"
+	"192~WRITELN<\"a # b\">"
+	"192~WRITELN<@2.5>"
+	"2<R,0>;224~FLOOR<@-3.5,R>;192~WRITELN<R>"
+	"2<R,0>;224~CEIL<@-3.5,R>;192~WRITELN<R>"
+
+	"2<R,0>;67<7,2,R>;192~WRITELN<R>"
+	"2<R,0>;67<@7.0,2,R>;192~WRITELN<R>"
+	"2<R,0>;64<1,@2.5,R>;192~WRITELN<R>"
+	"2<R,0>;68<-7,3,R>;192~WRITELN<R>"
+
+	"16<F|128<END>;192~WRITELN<\"F-body\">;144<END>;18<1>>;2<X,0>;128<END>;192~WRITELN<\"root-skipped\">;144<END>;17<F>;192~WRITELN<\"done\">"
+
+	"32<I,3,0,-1|192~WRITELN<I>>"
+
+	"2<N,0>;65<@0.0,@3.5,N>;2<R,0>;224~FLOOR<N,R>;192~WRITELN<R>"
+	"2<N,0>;65<@0.0,@3.5,N>;2<R,0>;224~CEIL<N,R>;192~WRITELN<R>"
+
+	"2<n,5>;112<80<n,0>|192~WRITELN<\"zero\">>;114|192~WRITELN<\"nonzero\">"
+	"2<ARR,48<5,3,8>>;112<49<9,ARR>|192~WRITELN<\"found\">>;114|192~WRITELN<\"not found\">"
+
+	"16<SHOW,V|192~WRITELN<V>>;2<X,7>;17<SHOW,X>"
 )
 
 expected=(
@@ -128,6 +178,41 @@ expected=(
 
 	"after"
 	"hit"
+
+	"10"
+	"30"
+	"[1, 2, 3]"
+	"abc"
+	""
+	""
+	""
+	"yes"
+
+	$'a\nb'
+	"1048576"
+	"gt"
+	"eq"
+	"7"
+	"3"
+	"7"
+	"nil"
+	"a;b,c|d<e>"
+	"a # b"
+	"2.5"
+	"-4"
+	"-3"
+	"3"
+	"3.5"
+	"3.5"
+	"-1"
+	"done"
+	$'3\n2\n1'
+
+	"-4"
+	"-3"
+	"nonzero"
+	"not found"
+	"nil"
 )
 
 for ((i=0; i<${#inputs[@]}; i++)); do

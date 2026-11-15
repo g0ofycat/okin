@@ -94,6 +94,27 @@ static inline int emit_optional_store(compiler_t *c, const okin_node_t *node, in
 	return 0;
 }
 
+/// @brief Checks to see if the method is a certain string
+/// @param n
+/// @param lit
+/// @return 1 on success, 0 on failure
+static int method_is(const okin_node_t *n, const char *lit) {
+	size_t l = strlen(lit);
+	return n->method_len == l && memcmp(n->method, lit, l) == 0;
+}
+
+/// @brief Look up a method in a table, writes the opcode to *out
+/// @param n
+/// @param tbl
+/// @param out
+/// @return 1 if found, 0 otherwise
+static int lookup_method(const okin_node_t *n, const method_entry_t *tbl, size_t count, vm_op_t *out)
+{
+	for (size_t i = 0; i < count; i++)
+		if (method_is(n, tbl[i].name)) { *out = tbl[i].op; return 1; }
+	return 0;
+}
+
 // ======================
 // -- LABEL TABLES
 // ======================
@@ -302,18 +323,29 @@ static void compile_cmp(compiler_t *c, const okin_node_t *node)
 /// @param node: Logical node - args: A[, B]
 static void compile_logical(compiler_t *c, const okin_node_t *node)
 {
+	chunk_t *ch = c->current_scope;
+
 	if (node->opcode == NOT) {
 		compile_node(c, node->args[0]);
-		chunk_emit(c->current_scope, OP_NOT, 0);
+		chunk_emit(ch, OP_NOT, 0);
 		return;
 	}
-	compile_node(c, node->args[0]);
-	compile_node(c, node->args[1]);
-	switch (node->opcode) {
-		case AND: chunk_emit(c->current_scope, OP_AND, 0); break;
-		case OR:  chunk_emit(c->current_scope, OP_OR,  0); break;
 
-	}
+	int is_or = (node->opcode == OR);
+
+	compile_node(c, node->args[0]);
+	if (is_or) chunk_emit(ch, OP_NOT, 0);
+	int jshort = chunk_emit(ch, OP_JMP_FALSE, 0);
+
+	compile_node(c, node->args[1]);
+	chunk_emit(ch, OP_NOT, 0);
+	chunk_emit(ch, OP_NOT, 0);
+	int jend = chunk_emit(ch, OP_JMP, 0);
+
+	chunk_patch(ch, jshort, ch->code_len);
+	chunk_emit(ch, is_or ? OP_TRUE : OP_FALSE, 0);
+
+	chunk_patch(ch, jend, ch->code_len);
 }
 
 // ======================
@@ -631,16 +663,20 @@ static void compile_in(compiler_t *c, const okin_node_t *node)
 static void compile_io(compiler_t *c, const okin_node_t *node)
 {
 	if (!node->method) { compiler_error(c, "IO requires a method"); return; }
-	if (memcmp(node->method, "WRITELN", node->method_len) == 0) {
+
+	if (method_is(node, "WRITELN")) {
 		compile_node(c, node->args[0]);
 		chunk_emit(c->current_scope, OP_IO_WRITELN, 0);
-	} else if (memcmp(node->method, "WRITE", node->method_len) == 0) {
+	} else if (method_is(node, "WRITE")) {
 		compile_node(c, node->args[0]);
 		chunk_emit(c->current_scope, OP_IO_WRITE, 0);
-	} else if (memcmp(node->method, "READ", node->method_len) == 0) {
+	} else if (method_is(node, "READ")) {
 		chunk_emit(c->current_scope, OP_IO_READ,
-				chunk_add_const(c->current_scope, vm_val_str(c->arena, node->args[0]->val_start, node->args[0]->val_len)));
-	} else compiler_error(c, "unknown IO method");
+				chunk_add_const(c->current_scope,
+					vm_val_str(c->arena, node->args[0]->val_start, node->args[0]->val_len)));
+	} else {
+		compiler_error(c, "unknown IO method");
+	}
 }
 
 /// @brief Compile a STRING lib call
@@ -648,17 +684,24 @@ static void compile_io(compiler_t *c, const okin_node_t *node)
 /// @param node: STRING node
 static void compile_string(compiler_t *c, const okin_node_t *node)
 {
-	if (!node->method) { compiler_error(c, "STRING requires a method"); return; }
-	for (int i = 0; i < node->argc - 1; i++) compile_node(c, node->args[i]);
-	vm_op_t op;
-	if      (memcmp(node->method, "LEN",    node->method_len) == 0) op = OP_STR_LEN;
-	else if (memcmp(node->method, "CONCAT", node->method_len) == 0) op = OP_STR_CONCAT;
-	else if (memcmp(node->method, "SLICE",  node->method_len) == 0) op = OP_STR_SLICE;
-	else if (memcmp(node->method, "FIND",   node->method_len) == 0) op = OP_STR_FIND;
-	else if (memcmp(node->method, "UPPER",  node->method_len) == 0) op = OP_STR_UPPER;
-	else if (memcmp(node->method, "LOWER",  node->method_len) == 0) op = OP_STR_LOWER;
-	else { compiler_error(c, "unknown STRING method"); return; }
+	static const method_entry_t methods[] = {
+		{ "LEN",    OP_STR_LEN    },
+		{ "CONCAT", OP_STR_CONCAT },
+		{ "SLICE",  OP_STR_SLICE  },
+		{ "FIND",   OP_STR_FIND   },
+		{ "UPPER",  OP_STR_UPPER  },
+		{ "LOWER",  OP_STR_LOWER  },
+	};
 
+	if (!node->method) { compiler_error(c, "STRING requires a method"); return; }
+
+	vm_op_t op;
+	if (!lookup_method(node, methods, sizeof(methods) / sizeof(methods[0]), &op)) {
+		compiler_error(c, "unknown STRING method");
+		return;
+	}
+
+	for (int i = 0; i < node->argc - 1; i++) compile_node(c, node->args[i]);
 	chunk_emit(c->current_scope, op, 0);
 	emit_optional_store(c, node, node->argc - 1);
 }
@@ -668,19 +711,25 @@ static void compile_string(compiler_t *c, const okin_node_t *node)
 /// @param node: MATH node
 static void compile_math(compiler_t *c, const okin_node_t *node)
 {
+	static const method_entry_t methods[] = {
+		{ "POW",   OP_MATH_POW   },
+		{ "SQRT",  OP_MATH_SQRT  },
+		{ "ABS",   OP_MATH_ABS   },
+		{ "MIN",   OP_MATH_MIN   },
+		{ "MAX",   OP_MATH_MAX   },
+		{ "FLOOR", OP_MATH_FLOOR },
+		{ "CEIL",  OP_MATH_CEIL  },
+	};
+
 	if (!node->method) { compiler_error(c, "MATH requires a method"); return; }
-	for (int i = 0; i < node->argc - 1; i++) compile_node(c, node->args[i]);
+
 	vm_op_t op;
+	if (!lookup_method(node, methods, sizeof(methods) / sizeof(methods[0]), &op)) {
+		compiler_error(c, "unknown MATH method");
+		return;
+	}
 
-	if      (memcmp(node->method, "POW",   node->method_len) == 0) op = OP_MATH_POW;
-	else if (memcmp(node->method, "SQRT",  node->method_len) == 0) op = OP_MATH_SQRT;
-	else if (memcmp(node->method, "ABS",   node->method_len) == 0) op = OP_MATH_ABS;
-	else if (memcmp(node->method, "MIN",   node->method_len) == 0) op = OP_MATH_MIN;
-	else if (memcmp(node->method, "MAX",   node->method_len) == 0) op = OP_MATH_MAX;
-	else if (memcmp(node->method, "FLOOR", node->method_len) == 0) op = OP_MATH_FLOOR;
-	else if (memcmp(node->method, "CEIL",  node->method_len) == 0) op = OP_MATH_CEIL;
-	else { compiler_error(c, "unknown MATH method"); return; }
-
+	for (int i = 0; i < node->argc - 1; i++) compile_node(c, node->args[i]);
 	chunk_emit(c->current_scope, op, 0);
 	emit_optional_store(c, node, node->argc - 1);
 }

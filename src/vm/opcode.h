@@ -26,7 +26,7 @@ typedef enum {
 	OP_EQ, OP_NEQ, OP_GT, OP_LT, OP_GTE, OP_LTE,
 
 	// -- LOGICAL --
-	OP_AND, OP_OR, OP_NOT,
+	OP_NOT,
 
 	// -- JMPS --
 	OP_JMP,           // a = target ip

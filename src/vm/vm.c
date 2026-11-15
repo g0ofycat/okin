@@ -302,20 +302,6 @@ static void op_cmp(vm_t *vm, const instruction_t *inst)
 // -- LOGICAL
 // ======================
 
-/// @brief Logical AND: short-circuits, pops both, pushes bool
-static void op_and(vm_t *vm, const instruction_t *inst)
-{
-	vm_val_t b = POP(), a = POP();
-	PUSH(vm_val_bool(vm_val_truthy(&a) && vm_val_truthy(&b)));
-}
-
-/// @brief Logical OR: short-circuits, pops both, pushes bool
-static void op_or(vm_t *vm, const instruction_t *inst)
-{
-	vm_val_t b = POP(), a = POP();
-	PUSH(vm_val_bool(vm_val_truthy(&a) || vm_val_truthy(&b)));
-}
-
 /// @brief Logical NOT: pops one, pushes inverted bool
 static void op_not(vm_t *vm, const instruction_t *inst)
 {
@@ -467,10 +453,8 @@ static void op_make_array(vm_t *vm, const instruction_t *inst)
 {
 	int count = inst->a;
 	vm_val_t arr = vm_val_array(vm->arena);
-	for (int i = 0; i < count; i++) {
-		vm_val_t element = POP(); 
-		vm_array_push(vm->arena, arr.arr, element);
-	}
+	for (int i = 0; i < count; i++) vm_array_push(vm->arena, arr.arr, vm_val_nil());
+	for (int i = count - 1; i >= 0; i--) arr.arr->items[i] = POP();
 	PUSH(arr);
 }
 
@@ -547,9 +531,13 @@ static void op_io_read(vm_t *vm, const instruction_t *inst)
 	if (!fgets(buf, sizeof(buf), stdin)) buf[0] = '\0';
 	size_t len = strlen(buf);
 	if (len > 0 && buf[len - 1] == '\n') buf[--len] = '\0';
-	vm_val_t *name = &vm->chunk->constants[inst->a];
-	if (name->type != VM_STR || !name->str) vm_error("io_read target variable key must be string");
-	vm_set_global(vm, name->str->data, name->str->len, vm_val_str(vm->arena, buf, len));
+
+	vm_val_t *name = &current_chunk(vm)->constants[inst->a];
+	if (name->type != VM_STR || !name->str)
+		vm_error("io_read target variable key must be string");
+
+	vm_set_global(vm, name->str->data, name->str->len,
+			vm_val_str(vm->arena, buf, len));
 }
 
 // ======================
@@ -772,8 +760,6 @@ void vm_run(vm_t *vm)
 		[OP_LT]           = &&op_cmp,
 		[OP_GTE]          = &&op_cmp,
 		[OP_LTE]          = &&op_cmp,
-		[OP_AND]          = &&op_and,
-		[OP_OR]           = &&op_or,
 		[OP_NOT]          = &&op_not,
 		[OP_JMP]          = &&op_jmp,
 		[OP_JMP_FALSE]    = &&op_jmp_false,
@@ -821,8 +807,6 @@ op_nil:          op_nil(vm, inst);          NEXT();
 op_pop:          POP();                     NEXT();
 op_arith:        op_arith(vm, inst);        NEXT();
 op_cmp:          op_cmp(vm, inst);          NEXT();
-op_and:          op_and(vm, inst);          NEXT();
-op_or:           op_or(vm, inst);           NEXT();
 op_not:          op_not(vm, inst);          NEXT();
 op_jmp:          op_jmp(vm, inst);          NEXT();
 op_jmp_false:    op_jmp_false(vm, inst);    NEXT();
