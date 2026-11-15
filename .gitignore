@@ -9,3 +9,5 @@ llm/model/fine_tune_colab.ipynb
 .vscode
 
 .okin_config_cache
+
+.code
