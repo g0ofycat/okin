@@ -267,4 +267,5 @@ void interpreter::run() {
 	} catch (const break_signal &) {
 		runtime_error("BREAK outside a loop");
 	}
+	std::cout << output.str();
 }

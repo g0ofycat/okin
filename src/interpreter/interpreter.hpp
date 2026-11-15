@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cmath>
+#include <sstream>
 #include <vector>
 #include <variant>
 
@@ -22,6 +23,7 @@
 
 #define UNK_VAL "<UNK>"
 #define TABLE_BYTE_LIMIT 256
+#define MAX_CALL_STACK 256
 
 // ======================
 // -- CLASSES & STRUCTS
@@ -205,6 +207,7 @@ class interpreter {
 		std::vector<interpreter_call_frame_t>                            call_stack;
 		std::vector<int> branch_stack;
 		std::vector<int> body_ips;
+		std::ostringstream output;
 
 		const okin_program_t *program;
 		environment           *global_env;

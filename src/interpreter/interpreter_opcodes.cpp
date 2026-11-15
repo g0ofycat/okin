@@ -64,6 +64,8 @@ void interpreter::exec_function(const okin_node_t *node, environment *env)
 /// @param env
 void interpreter::exec_call(const okin_node_t *node, environment *env)
 {
+	if (call_stack.size() >= MAX_CALL_STACK) runtime_error("call stack overflow");
+
 	std::string_view name = tok_name(node->args[0]);
 	auto it = functions.find(std::string(name));
 	if (it == functions.end())
@@ -87,6 +89,14 @@ void interpreter::exec_call(const okin_node_t *node, environment *env)
 	okin_val_t ret = make_nil();
 	try { execute_body(fn->body, fn->body_len, fn_env.get()); }
 	catch (return_signal &r) { ret = r.value; }
+	catch (break_signal &) {
+		call_stack.pop_back();
+		runtime_error("BREAK outside a loop");
+	}
+	catch (...) {
+		call_stack.pop_back();
+		throw;
+	}
 
 	interpreter_call_frame_t frame = call_stack.back();
 	call_stack.pop_back();
@@ -338,19 +348,21 @@ void interpreter::exec_io(const okin_node_t *node, environment *env)
 	if (method == "WRITELN")
 	{
 		for (int i = 0; i < node->argc; i++)
-			std::cout << val_to_string(eval(node->args[i], env));
-		std::cout << '\n';
+			output << val_to_string(eval(node->args[i], env));
+		output << '\n';
 	}
 	else if (method == "WRITE")
 	{
 		for (int i = 0; i < node->argc; i++)
-			std::cout << val_to_string(eval(node->args[i], env));
+			output << val_to_string(eval(node->args[i], env));
 	}
 	else if (method == "READ")
 	{
 		std::string input;
 		std::getline(std::cin, input);
-		env->declare(tok_name(node->args[0]), make_string(input));
+		std::string_view name = tok_name(node->args[0]);
+		if (global_env->get(name)) global_env->set(name, make_string(input));
+		else global_env->declare(name, make_string(input));
 	}
 	else runtime_error("unknown IO method '" + std::string(method) + "'");
 }
@@ -422,18 +434,21 @@ void interpreter::exec_math(const okin_node_t *node, environment *env)
 
 	if (method == "POW")
 	{
+		if (node->argc < 3) runtime_error("MATH POW requires two operands and a destination");
 		double base = to_double(eval(node->args[0], env));
 		double exp  = to_double(eval(node->args[1], env));
 		env->set(tok_name(node->args[2]), make_float(std::pow(base, exp)));
 	}
 	else if (method == "SQRT")
 	{
+		if (node->argc < 2) runtime_error("MATH SQRT requires an operand and a destination");
 		double a = to_double(eval(node->args[0], env));
 		if (a < 0.0) runtime_error("SQRT of negative number");
 		env->set(tok_name(node->args[1]), make_float(std::sqrt(a)));
 	}
 	else if (method == "ABS")
 	{
+		if (node->argc < 2) runtime_error("MATH ABS requires an operand and a destination");
 		okin_val_t a      = eval(node->args[0], env);
 		okin_val_t result = (a.type == val_type_t::FLOAT)
 			? make_float(std::abs(to_double(a)))
@@ -442,6 +457,7 @@ void interpreter::exec_math(const okin_node_t *node, environment *env)
 	}
 	else if (method == "MIN")
 	{
+		if (node->argc < 3) runtime_error("MATH MIN requires two operands and a destination");
 		okin_val_t a   = eval(node->args[0], env);
 		okin_val_t b   = eval(node->args[1], env);
 		bool use_float = (a.type == val_type_t::FLOAT || b.type == val_type_t::FLOAT);
@@ -452,6 +468,7 @@ void interpreter::exec_math(const okin_node_t *node, environment *env)
 	}
 	else if (method == "MAX")
 	{
+		if (node->argc < 3) runtime_error("MATH MAX requires two operands and a destination");
 		okin_val_t a   = eval(node->args[0], env);
 		okin_val_t b   = eval(node->args[1], env);
 		bool use_float = (a.type == val_type_t::FLOAT || b.type == val_type_t::FLOAT);
@@ -462,11 +479,13 @@ void interpreter::exec_math(const okin_node_t *node, environment *env)
 	}
 	else if (method == "FLOOR")
 	{
+		if (node->argc < 2) runtime_error("MATH FLOOR requires an operand and a destination");
 		double a = to_double(eval(node->args[0], env));
 		env->set(tok_name(node->args[1]), make_int((int64_t)std::floor(a)));
 	}
 	else if (method == "CEIL")
 	{
+		if (node->argc < 2) runtime_error("MATH CEIL requires an operand and a destination");
 		double a = to_double(eval(node->args[0], env));
 		env->set(tok_name(node->args[1]), make_int((int64_t)std::ceil(a)));
 	}
@@ -581,6 +600,8 @@ okin_val_t interpreter::eval_in(const okin_node_t *node, environment *env)
 /// @return okin_val_t
 okin_val_t interpreter::eval_call(const okin_node_t *node, environment *env)
 {
+	if (call_stack.size() >= MAX_CALL_STACK) runtime_error("call stack overflow");
+
 	std::string_view name = tok_name(node->args[0]);
 	auto it = functions.find(std::string(name));
 	if (it == functions.end())
@@ -602,6 +623,14 @@ okin_val_t interpreter::eval_call(const okin_node_t *node, environment *env)
 	okin_val_t ret = make_nil();
 	try { execute_body(fn->body, fn->body_len, fn_env.get()); }
 	catch (return_signal &r) { ret = r.value; }
+	catch (break_signal &) {
+		call_stack.pop_back();
+		runtime_error("BREAK outside a loop");
+	}
+	catch (...) {
+		call_stack.pop_back();
+		throw;
+	}
 
 	call_stack.pop_back();
 

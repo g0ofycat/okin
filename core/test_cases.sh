@@ -61,6 +61,7 @@ t_in() {
 	if [[ "$mode" == both ]]; then
 		local a b
 		a=$(run_prog "$prog" vm "$input"); b=$(run_prog "$prog" interp "$input")
+		a=${a//$'\r\n'/$'\n'}; b=${b//$'\r\n'/$'\n'}
 		if   [[ "$a" == "$exp" && "$b" == "$exp" ]]; then record_pass "$label"
 		else
 			record_fail "$label"
@@ -72,6 +73,7 @@ t_in() {
 	fi
 
 	local out; out=$(run_prog "$prog" "$(primary_backend)" "$input")
+	out=${out//$'\r\n'/$'\n'}
 	if [[ "$out" == "$exp" ]]; then record_pass "$label"
 	else
 		record_fail "$label"
@@ -87,6 +89,7 @@ t_err() {
 	local b out code ok=1 detail=""
 	for b in "${backends[@]}"; do
 		out=$(run_prog "$1" "$b" ""); code=$?
+		out=${out//$'\r\n'/$'\n'}
 		if ! [[ $code -ge 1 && $code -lt 124 && -z "$out" ]]; then
 			ok=0; detail+=" [$b: exit $code, stdout '$out']"
 		fi
@@ -314,7 +317,7 @@ t_err '999<1>'                                             "unknown opcode"
 section "design decisions (expected = the behavior you chose)"
 # ----------------------------------------------------------------------
 t '2<R,0>;224~POW<2,20,R>;192~WRITELN<R>'                  '1048576'    'integral float prints without exponent'
-t '2<R,0>;224~POW<2,0.5,R>;192~WRITELN<R>'                 '1.41421'    'POW with fractional exponent (%g)'
+t '2<R,0>;224~POW<2,@0.5,R>;192~WRITELN<R>'                '1.4142135623731'  'POW with fractional exponent'
 
 # ----------------------------------------------------------------------
 section "stress (performance / limits)"
