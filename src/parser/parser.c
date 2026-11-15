@@ -169,41 +169,6 @@ static int is_jump_opcode(uint8_t opcode)
 	return 0;
 }
 
-/// @brief Resolve a label name to its program index, -1 if not found
-/// @param p
-/// @param name
-/// @param len
-/// @return int
-static int resolve_label(const parser_t *p, const char *name, size_t len)
-{
-	for (int i = 0; i < p->program->label_count; i++)
-	{
-		label_entry_t *e = &p->program->labels[i];
-		if (e->name_len == len && memcmp(e->name, name, len) == 0)
-			return e->index;
-	}
-	return -1;
-}
-
-/// @brief Handle jump opcode label resolution
-/// @param p
-/// @param n
-static void handle_jump_opcode(parser_t *p, okin_node_t *n)
-{
-	if (!is_jump_opcode(n->opcode)) return;
-	if (!n->args || n->argc == 0) return;
-
-	okin_node_t *label_arg = n->args[n->argc - 1];
-	int idx = resolve_label(p, label_arg->val_start, label_arg->val_len);
-
-	if (idx == -1)
-		parse_error(p, "undefined label");
-	else {
-		label_arg->opcode     = NODE_JUMP_TARGET;
-		label_arg->jump_index = idx;
-	}
-}
-
 // ======================
 // -- PRIVATE: ARGS & BODY
 // ======================
@@ -289,8 +254,22 @@ static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 
 	n->opcode = (uint8_t)fast_atoi(t->start, opcode_len);
 
-	if (!match(p, TK_ARG_OPEN))
+	if (!match(p, TK_ARG_OPEN)) {
+		if (n->opcode != ELSE || !match(p, TK_PIPE))
+			return n;
+		if (check(p, TK_EOF) || check(p, TK_SEMI)) {
+			parse_error(p, "expected statement after ELSE");
+			return n;
+		}
+		if (!check(p, TK_OPCODE) && !check(p, TK_LIB_CALL)) {
+			parse_error(p, "expected statement after ELSE");
+			return n;
+		}
+		n->body = alloc_node_array(p, 1);
+		n->body[0] = parse_statement(p);
+		n->body_len = 1;
 		return n;
+	}
 
 	n->args = parse_args(p, &n->argc);
 
@@ -300,7 +279,6 @@ static okin_node_t *parse_statement_from(parser_t *p, const token_t *t)
 	if (!match(p, TK_ARG_CLOSE))
 		parse_error(p, "expected '>'");
 
-	handle_jump_opcode(p, n);
 	return n;
 }
 
@@ -398,6 +376,56 @@ static void print_node(const okin_node_t *n, int depth)
 // -- PARSER
 // ======================
 
+static int resolve_sequence_labels(parser_t *p, okin_node_t **nodes, int len)
+{
+	label_entry_t labels[PARSER_MAX_LABELS];
+	int label_count = 0;
+	int valid = 1;
+
+	for (int i = 0; i < len; i++) {
+		okin_node_t *node = nodes[i];
+		if (node->opcode != LABEL || node->argc == 0) continue;
+		okin_node_t *name = node->args[0];
+		for (int j = 0; j < label_count; j++) {
+			if (labels[j].name_len == name->val_len &&
+					memcmp(labels[j].name, name->val_start, name->val_len) == 0) {
+				parse_error(p, "duplicate label");
+				valid = 0;
+			}
+		}
+		if (label_count >= PARSER_MAX_LABELS) {
+			parse_error(p, "too many labels (PARSER_MAX_LABELS)");
+			valid = 0;
+			break;
+		}
+		labels[label_count++] = (label_entry_t){ name->val_start, name->val_len, i };
+	}
+
+	for (int i = 0; i < len; i++) {
+		okin_node_t *node = nodes[i];
+		if (is_jump_opcode(node->opcode) && node->argc > 0) {
+			okin_node_t *target = node->args[node->argc - 1];
+			int found = 0;
+			for (int j = 0; j < label_count; j++) {
+				if (labels[j].name_len == target->val_len &&
+						memcmp(labels[j].name, target->val_start, target->val_len) == 0) {
+					target->opcode = NODE_JUMP_TARGET;
+					target->jump_index = labels[j].index;
+					found = 1;
+					break;
+				}
+			}
+			if (!found) {
+				parse_error(p, "undefined label");
+				valid = 0;
+			}
+		}
+		if (node->body_len > 0)
+			valid &= resolve_sequence_labels(p, node->body, node->body_len);
+	}
+	return valid;
+}
+
 /// @brief Initialize parser from a lexed token stream
 /// @param lexer: Completed lexer instance
 /// @return Heap allocated parser_t
@@ -422,7 +450,17 @@ void parser_run(parser_t *p)
 	while (!check(p, TK_EOF))
 	{
 		if (check(p, TK_SEMI)) { advance(p); continue; }
-		if (check(p, TK_ERROR)) { advance(p); continue; }
+		if (check(p, TK_ERROR)) {
+			parse_error(p, "invalid token");
+			advance(p);
+			sync(p);
+			continue;
+		}
+		if (!check(p, TK_OPCODE) && !check(p, TK_LIB_CALL)) {
+			parse_error(p, "expected statement");
+			sync(p);
+			continue;
+		}
 		if (count >= PARSER_MAX_NODES) { parse_error(p, "program too large"); break; }
 		tmp[count++] = parse_statement(p);
 		match(p, TK_SEMI);
@@ -431,6 +469,7 @@ void parser_run(parser_t *p)
 	p->program->len   = count;
 	p->program->nodes = arena_alloc(p->arena, sizeof(okin_node_t *) * count);
 	memcpy(p->program->nodes, tmp, sizeof(okin_node_t *) * count);
+	resolve_sequence_labels(p, p->program->nodes, p->program->len);
 }
 
 /// @brief Free parser, arena, and program

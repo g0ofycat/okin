@@ -97,6 +97,7 @@ inputs=(
 	"192~WRITELN<\"a;b,c|d<e>\">"
 	"192~WRITELN<\"a # b\">"
 	"192~WRITELN<@2.5>"
+	"192~WRITELN<@-3.5>"
 	"2<R,0>;224~FLOOR<@-3.5,R>;192~WRITELN<R>"
 	"2<R,0>;224~CEIL<@-3.5,R>;192~WRITELN<R>"
 
@@ -114,6 +115,7 @@ inputs=(
 
 	"2<n,5>;112<80<n,0>|192~WRITELN<\"zero\">>;114|192~WRITELN<\"nonzero\">"
 	"2<ARR,48<5,3,8>>;112<49<9,ARR>|192~WRITELN<\"found\">>;114|192~WRITELN<\"not found\">"
+	"2<n,5>;112<80<n,0>|192~WRITELN<\"zero\">>;114|192~WRITELN<\"nonzero\">;192~WRITELN<\"after\">"
 
 	"16<SHOW,V|192~WRITELN<V>>;2<X,7>;17<SHOW,X>"
 )
@@ -199,6 +201,7 @@ expected=(
 	"a;b,c|d<e>"
 	"a # b"
 	"2.5"
+	"-3.5"
 	"-4"
 	"-3"
 	"3"
@@ -212,7 +215,8 @@ expected=(
 	"-3"
 	"nonzero"
 	"not found"
-	"nil"
+	$'nonzero\nafter'
+	"7"
 )
 
 for ((i=0; i<${#inputs[@]}; i++)); do
@@ -236,5 +240,33 @@ for ((i=0; i<${#inputs[@]}; i++)); do
 
 	((total++))
 done
+
+mode_flag=""
+[[ "$use_vm" == true ]] && mode_flag="-vm"
+
+t_err() {
+	local out code
+	out=$(timeout 5 "$exe_path" "$1" $mode_flag 2>/dev/null)
+	code=$?
+	if [[ $code -ge 1 && $code -lt 124 && -z "$out" ]]; then
+		echo -e "\033[0;32m[PASS]\033[0m $2"
+		((passed++))
+	else
+		echo -e "\033[0;31m[FAIL]\033[0m $2 (exit $code, stdout: '$out')"
+	fi
+	((total++))
+}
+
+t_err '192~W<"x">' "unknown IO method"
+t_err '2<R,0>;208~L<"hello",R>;192~WRITELN<R>' "unknown STRING method"
+t_err '2<n,5>;16<inc_n|64<n,1,n>>;17<inc_n>' "undeclared variable in function"
+t_err '128<MISSING>' "undefined label"
+t_err '34' "BREAK outside loop"
+t_err '18<1>' "RET outside function"
+t_err '17<1>' "non-function call"
+t_err '32<I,0,1,0|192~WRITELN<I>>' "zero FOR step"
+t_err '16<F|18<1>>;16<F|18<2>>' "duplicate function definition"
+t_err '114|' "ELSE without a body"
+t_err '2<n,5>;112<80<n,0>|192~WRITELN<"zero">>;114|192~WRITELN<"nonzero">>>' "unmatched ELSE closer"
 
 echo "--- PASSED: $passed - TOTAL: $total ---"

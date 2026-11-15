@@ -95,12 +95,34 @@ static void vm_set_global(vm_t *vm, const char *key, size_t len, vm_val_t val)
 // -- VALUE HELPERS
 // ======================
 
+/// @brief Value to float
+/// @param v: Value to convert
+/// @return double
+static double val_to_float(const vm_val_t *v)
+{
+	if (v->type == VM_INT)   return (double)v->i;
+	if (v->type == VM_FLOAT) return v->f;
+	vm_error("expected numeric value");
+	return 0;
+}
+
+static int num_cmp(const vm_val_t *a, const vm_val_t *b)
+{
+	if (a->type == VM_INT && b->type == VM_INT)
+		return (a->i > b->i) - (a->i < b->i);
+	double x = val_to_float(a), y = val_to_float(b);
+	return (x > y) - (x < y);
+}
+
 /// @brief Equal check between two values
 /// @param a: Left operand
 /// @param b: Right operand
 /// @return int (1 = equal)
 static int val_equal(const vm_val_t *a, const vm_val_t *b)
 {
+	int a_numeric = a->type == VM_INT || a->type == VM_FLOAT;
+	int b_numeric = b->type == VM_INT || b->type == VM_FLOAT;
+	if (a_numeric && b_numeric) return num_cmp(a, b) == 0;
 	if (a->type != b->type) return 0;
 	switch (a->type) {
 		case VM_NIL:   return 1;
@@ -113,17 +135,6 @@ static int val_equal(const vm_val_t *a, const vm_val_t *b)
 	return 0;
 }
 
-/// @brief Value to float
-/// @param v: Value to convert
-/// @return double
-static double val_to_float(const vm_val_t *v)
-{
-	if (v->type == VM_INT)   return (double)v->i;
-	if (v->type == VM_FLOAT) return v->f;
-	vm_error("expected numeric value");
-	return 0;
-}
-
 /// @brief Print a value to stdout
 /// @param v: Value to print
 static void val_print(const vm_val_t *v)
@@ -132,7 +143,7 @@ static void val_print(const vm_val_t *v)
 		case VM_NIL:   printf("nil"); break;
 		case VM_BOOL:  printf("%s", v->b ? "true" : "false"); break;
 		case VM_INT:   printf("%lld", (long long)v->i); break;
-		case VM_FLOAT: printf("%g", v->f); break;
+		case VM_FLOAT: printf("%.15g", v->f); break;
 		case VM_STR:   printf("%s", v->str->data); break;
 		case VM_ARRAY:
 					   printf("[");
@@ -287,13 +298,13 @@ static void op_cmp(vm_t *vm, const instruction_t *inst)
 	if (inst->op == OP_EQ)  { PUSH(vm_val_bool( val_equal(&a, &b))); return; }
 	if (inst->op == OP_NEQ) { PUSH(vm_val_bool(!val_equal(&a, &b))); return; }
 
-	double fa = val_to_float(&a), fb = val_to_float(&b);
+	int cmp = num_cmp(&a, &b);
 
 	switch (inst->op) {
-		case OP_GT:  PUSH(vm_val_bool(fa >  fb)); break;
-		case OP_LT:  PUSH(vm_val_bool(fa <  fb)); break;
-		case OP_GTE: PUSH(vm_val_bool(fa >= fb)); break;
-		case OP_LTE: PUSH(vm_val_bool(fa <= fb)); break;
+		case OP_GT:  PUSH(vm_val_bool(cmp >  0)); break;
+		case OP_LT:  PUSH(vm_val_bool(cmp <  0)); break;
+		case OP_GTE: PUSH(vm_val_bool(cmp >= 0)); break;
+		case OP_LTE: PUSH(vm_val_bool(cmp <= 0)); break;
 		default: vm_error("unknown cmp op"); break;
 	}
 }
@@ -365,7 +376,7 @@ static void op_jne(vm_t *vm, const instruction_t *inst)
 static void op_jgt(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t b = POP(), a = POP();
-	if (val_to_float(&a) > val_to_float(&b))
+	if (num_cmp(&a, &b) > 0)
 		vm_jump(vm, inst->a);
 }
 
@@ -375,7 +386,7 @@ static void op_jgt(vm_t *vm, const instruction_t *inst)
 static void op_jlt(vm_t *vm, const instruction_t *inst)
 {
 	vm_val_t b = POP(), a = POP();
-	if (val_to_float(&a) < val_to_float(&b))
+	if (num_cmp(&a, &b) < 0)
 		vm_jump(vm, inst->a);
 }
 

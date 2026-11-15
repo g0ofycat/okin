@@ -120,8 +120,7 @@ bool environment::is_global_scope() const { return parent == nullptr && globals_
 /// @param parser
 interpreter::interpreter(const parser_t *parser) :
 	program(parser->program),
-	global_env(new environment(nullptr, nullptr)),
-	ip(0)
+	global_env(new environment(nullptr, nullptr))
 {
 	static bool initialized = false;
 	if (!initialized) { init_tables(); initialized = true; }
@@ -221,8 +220,15 @@ okin_val_t interpreter::eval(const okin_node_t *node, environment *env)
 /// @param env
 void interpreter::execute_body(okin_node_t **nodes, int len, environment *env)
 {
-	for (int i = 0; i < len; i++)
-		execute(nodes[i], env);
+	body_ips.push_back(0);
+	try {
+		while (body_ips.back() < len)
+			execute(nodes[body_ips.back()++], env);
+	} catch (...) {
+		body_ips.pop_back();
+		throw;
+	}
+	body_ips.pop_back();
 }
 
 // ======================
@@ -245,11 +251,20 @@ void interpreter::execute(const okin_node_t *node, environment *env)
 
 /// @brief Interpret and run token stream
 void interpreter::run() {
-	ip = 0;
-
-	while (ip < program->len)
-	{
-		execute(program->nodes[ip], global_env);
-		ip++;
+	for (int i = 0; i < program->len; i++) {
+		const okin_node_t *node = program->nodes[i];
+		if (node->opcode == FUNCTION) {
+			std::string_view name = tok_name(node->args[0]);
+			if (functions.count(name))
+				runtime_error("duplicate function definition '" + std::string(name) + "'");
+			functions[name] = node;
+		}
+	}
+	try {
+		execute_body(program->nodes, program->len, global_env);
+	} catch (const return_signal &) {
+		runtime_error("RET outside a function");
+	} catch (const break_signal &) {
+		runtime_error("BREAK outside a loop");
 	}
 }

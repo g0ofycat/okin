@@ -8,7 +8,7 @@ RULES
 2. Opcodes 48,49 expression-only: 2<ARR,48<1,2,3>>
 3. Loop variables pre-declare: 2<SUM,0>;32<I,1,11,1|64<SUM,I,SUM>>
 4. Chain ELIF/ELSE before IF: 113<...>; 112<...> or 114|...; 112<...>
-5. ELSE uses 114|body (no condition, no < >)
+5. ELSE uses 114|statement (no condition or brackets); following semicolon-delimited statements remain outside the ELSE.
 
 TEST CASES (number. code: output)
 

@@ -207,6 +207,7 @@ static void handle_float_literal(lexer_t *l, const char *start, int line, int co
 {
 	advance(l);
 
+	if (peek(l) == '-') advance(l);
 	read_while(l, isdigit);
 	if (peek(l) == '.')
 	{
@@ -225,7 +226,9 @@ static void handle_float_literal(lexer_t *l, const char *start, int line, int co
 /// @return 1 if handled as literal, 0 otherwise
 static int try_handle_literal(lexer_t *l, char c, const char *start, int line, int col)
 {
-	if (!l->src[l->pos + 1] || !isdigit((unsigned char)l->src[l->pos + 1]))
+	if (!l->src[l->pos + 1] ||
+			(!isdigit((unsigned char)l->src[l->pos + 1]) &&
+			 !(l->src[l->pos + 1] == '-' && isdigit((unsigned char)l->src[l->pos + 2]))))
 		return 0;
 
 	switch(c) {

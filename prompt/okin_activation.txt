@@ -16,6 +16,7 @@ Never write okin without the backtick fences. The runtime cannot detect or execu
 
 Variable names used inside loops must be declared before the loop begins.
 FOR takes <NAME, START, END, STEP> where END is exclusive.
+A negative STEP iterates downward; STEP must be nonzero.
 WHILE is better suited for problems without a fixed iteration count.
 
 CALL with a DEST argument automatically declares the destination variable.

@@ -54,7 +54,6 @@ struct return_signal { okin_val_t value; };
 
 struct interpreter_call_frame_t
 {
-	int         return_ip;
 	std::string_view dest;
 	bool        has_dest;
 };
@@ -79,7 +78,7 @@ inline std::string val_to_string(const okin_val_t &v) {
 			return std::to_string(std::get<int64_t>(v.data));
 		case val_type_t::FLOAT: {
 									char buf[64];
-									snprintf(buf, sizeof(buf), "%g", std::get<double>(v.data));
+									snprintf(buf, sizeof(buf), "%.15g", std::get<double>(v.data));
 									return buf;
 								}
 		case val_type_t::BOOL:
@@ -205,10 +204,10 @@ class interpreter {
 		std::unordered_map<std::string_view, const okin_node_t *> functions;
 		std::vector<interpreter_call_frame_t>                            call_stack;
 		std::vector<int> branch_stack;
+		std::vector<int> body_ips;
 
 		const okin_program_t *program;
 		environment           *global_env;
-		int                   ip;
 
 		// ======================
 		// -- DISPATCH TABLES

@@ -118,6 +118,12 @@ int main(int argc, char** argv) {
 	parser_t* parse = parser_init(lex);
 	parser_run(parse);
 	if (debug) parser_print(parse);
+	if (parse->errors) {
+		parser_free(parse);
+		lexer_free(lex);
+		free(expanded);
+		return 1;
+	}
 
 #ifdef USE_VM
 	if (use_vm) {
@@ -138,8 +144,16 @@ int main(int argc, char** argv) {
 	} else
 #endif
 	{
-		interpreter interp(parse);
-		interp.run();
+		try {
+			interpreter interp(parse);
+			interp.run();
+		} catch (const std::exception &e) {
+			std::cerr << e.what() << "\n";
+			parser_free(parse);
+			lexer_free(lex);
+			free(expanded);
+			return 1;
+		}
 	}
 
 	parser_free(parse);

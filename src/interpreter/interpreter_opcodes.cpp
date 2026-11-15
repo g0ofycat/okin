@@ -74,7 +74,7 @@ void interpreter::exec_call(const okin_node_t *node, environment *env)
 
 	int param_count = fn->argc - 1;
 	int arg_count   = node->argc - 1;
-	bool has_dest   = arg_count > param_count;
+	bool has_dest   = arg_count > param_count && node->args[node->argc - 1]->tok == TK_VALUE;
 
 	for (int i = 0; i < param_count && i < arg_count; i++) {
 		std::string_view param_name = tok_name(fn->args[i + 1]);
@@ -82,7 +82,7 @@ void interpreter::exec_call(const okin_node_t *node, environment *env)
 	}
 
 	std::string_view dest_name = has_dest ? tok_name(node->args[node->argc - 1]) : "";
-	call_stack.push_back({ ip, dest_name, has_dest });
+	call_stack.push_back({ dest_name, has_dest });
 
 	okin_val_t ret = make_nil();
 	try { execute_body(fn->body, fn->body_len, fn_env.get()); }
@@ -90,7 +90,6 @@ void interpreter::exec_call(const okin_node_t *node, environment *env)
 
 	interpreter_call_frame_t frame = call_stack.back();
 	call_stack.pop_back();
-	ip = frame.return_ip;
 
 	if (frame.has_dest)
 		env->set(frame.dest, ret);
@@ -123,7 +122,7 @@ void interpreter::exec_for(const okin_node_t *node, environment *env)
 	auto loop_env = std::make_unique<environment>(env, nullptr);
 	try
 	{
-		for (int64_t i = start; i < end; i += step)
+		for (int64_t i = start; step > 0 ? i < end : i > end; i += step)
 		{
 			loop_env->declare(std::string(iter), make_int(i));
 			execute_body(node->body, node->body_len, loop_env.get());
@@ -303,7 +302,8 @@ void interpreter::exec_else(const okin_node_t *node, environment *env)
 /// @param env
 void interpreter::exec_jmp(const okin_node_t *node, environment *env)
 {
-	if (node->opcode == JMP) { ip = node->args[0]->jump_index - 1; return; }
+	if (body_ips.empty()) runtime_error("jump outside an executable body");
+	if (node->opcode == JMP) { body_ips.back() = node->args[0]->jump_index; return; }
 
 	okin_val_t a = eval(node->args[0], env);
 	okin_val_t b = eval(node->args[1], env);
@@ -316,7 +316,7 @@ void interpreter::exec_jmp(const okin_node_t *node, environment *env)
 	if (node->opcode == JGT) take = af > bf;
 	if (node->opcode == JLT) take = af < bf;
 
-	if (take) ip = node->args[2]->jump_index - 1;
+	if (take) body_ips.back() = node->args[2]->jump_index;
 }
 
 /// @brief Label no-op
@@ -597,7 +597,7 @@ okin_val_t interpreter::eval_call(const okin_node_t *node, environment *env)
 		fn_env->declare(param_name, eval(node->args[i + 1], env));
 	}
 
-	call_stack.push_back({ ip, "", false });
+	call_stack.push_back({ "", false });
 
 	okin_val_t ret = make_nil();
 	try { execute_body(fn->body, fn->body_len, fn_env.get()); }
