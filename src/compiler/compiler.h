@@ -65,6 +65,7 @@ typedef struct {
 	func_entry_t    functions[MAX_FUNCTIONS];
 	label_table_t   labels;
 	int             func_count;
+	int             loop_depth;
 	int             break_patches[MAX_BREAK_PATCHES];
 	int             break_count;
 	int             errors;

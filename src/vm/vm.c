@@ -106,6 +106,10 @@ static double val_to_float(const vm_val_t *v)
 	return 0;
 }
 
+/// @breif Compare if a is bigger than b
+/// @param a
+/// @param b
+/// @return 1 if a is greater, 0 equal, -1 if b is greater
 static int num_cmp(const vm_val_t *a, const vm_val_t *b)
 {
 	if (a->type == VM_INT && b->type == VM_INT)

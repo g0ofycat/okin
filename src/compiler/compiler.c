@@ -66,6 +66,11 @@ static const func_entry_t *find_func(const compiler_t *c, const char *name, size
 	return NULL;
 }
 
+/// @brief Find function index
+/// @param c
+/// @param name
+/// @param len
+/// @return int: -1 on failure
 static int resolve_func(const compiler_t *c, const char *name, size_t len)
 {
 	const func_entry_t *entry = find_func(c, name, len);
@@ -73,6 +78,10 @@ static int resolve_func(const compiler_t *c, const char *name, size_t len)
 	return -1;
 }
 
+/// @brief Find number of arguments in a function
+/// @param c
+/// @param name
+/// @param len
 static int find_func_arity(const compiler_t *c, const char *name, size_t len)
 {
 	for (int i = 0; i < c->parser->program->len; i++) {
@@ -132,6 +141,35 @@ static int lookup_method(const okin_node_t *n, const method_entry_t *tbl, size_t
 	for (size_t i = 0; i < count; i++)
 		if (method_is(n, tbl[i].name)) { *out = tbl[i].op; return 1; }
 	return 0;
+}
+
+/// @brief Emit OP_LOAD_CONST
+/// @param c
+/// @param v
+static void emit_int_const(compiler_t *c, int64_t v)
+{
+	chunk_emit(c->current_scope, OP_LOAD_CONST,
+			chunk_add_const(c->current_scope, vm_val_int(v)));
+}
+
+/// @brief If the node is a numeric literal, store its value in *out and return 1
+/// @param n
+/// @param out
+/// @return int
+static int literal_number(const okin_node_t *n, double *out)
+{
+	if (n->opcode != NODE_LEAF) return 0;
+	size_t skip = 0;
+	if (n->tok == TK_INT_LIT || n->tok == TK_FLOAT_LIT) skip = 1;   // '$' / '@' prefix
+	else if (n->tok != TK_INT) return 0;
+
+	char buf[32];
+	size_t len = n->val_len - skip;
+	if (len > 31) len = 31;
+	memcpy(buf, n->val_start + skip, len);
+	buf[len] = '\0';
+	*out = atof(buf);
+	return 1;
 }
 
 // ======================
@@ -288,11 +326,7 @@ static void compile_ret(compiler_t *c, const okin_node_t *node)
 /// @param node: BREAK node
 static void compile_break(compiler_t *c, const okin_node_t *node)
 {
-	int in_loop = 0;
-	for (int i = c->break_count - 1; i >= 0; i--) {
-		if (c->break_patches[i] == -1) { in_loop = 1; break; }
-	}
-	if (!in_loop) { compiler_error(c, "BREAK outside a loop"); return; }
+	if (c->loop_depth == 0) { compiler_error(c, "BREAK outside of a loop"); return; }
 	if (c->break_count >= MAX_BREAK_PATCHES) { compiler_error(c, "too many breaks"); return; }
 	c->break_patches[c->break_count++] = chunk_emit(c->current_scope, OP_JMP, 0);
 }
@@ -477,7 +511,9 @@ static void compile_while(compiler_t *c, const okin_node_t *node)
 	int incoming_break_start = c->break_count;
 	c->break_patches[c->break_count++] = -1;
 
+	c->loop_depth++;
 	compile_body(c, node->body, node->body_len);
+	c->loop_depth--;
 
 	chunk_emit(c->current_scope, OP_JMP, loop_start);
 	chunk_patch(c->current_scope, jf, c->current_scope->code_len);
@@ -496,81 +532,90 @@ static void compile_while(compiler_t *c, const okin_node_t *node)
 /// @param node: FOR node - args: INDEX, START, END, STEP | body
 static void compile_for(compiler_t *c, const okin_node_t *node)
 {
-	if (c->break_count >= MAX_BREAK_PATCHES) { compiler_error(c, "too many nested loops"); return; }
-	compile_node(c, node->args[1]);
-	compile_node(c, node->args[2]);
-	compile_node(c, node->args[3]);
+	chunk_t *ch = c->current_scope;
+
+	double step_lit;
+	int step_is_lit = literal_number(node->args[3], &step_lit);
+	if (step_is_lit && step_lit == 0) { compiler_error(c, "FOR step cannot be zero"); return; }
+
+	compile_node(c, node->args[1]);   // start
+	compile_node(c, node->args[2]);   // end
+	compile_node(c, node->args[3]);   // step
 
 	scope_begin(c->scope);
 
-	int slot = scope_declare(c->scope, node->args[0]->val_start, node->args[0]->val_len);
-	if (slot == -1) { compiler_error(c, "too many locals"); return; }
-	c->current_scope->num_locals++;
-
-	static const char end_name[] = "\001okin_for_end";
+	static const char end_name[]  = "\001okin_for_end";
 	static const char step_name[] = "\001okin_for_step";
-	int end_slot = scope_declare(c->scope, end_name, sizeof(end_name) - 1);
+	int slot      = scope_declare(c->scope, node->args[0]->val_start, node->args[0]->val_len);
+	int end_slot  = scope_declare(c->scope, end_name,  sizeof(end_name)  - 1);
 	int step_slot = scope_declare(c->scope, step_name, sizeof(step_name) - 1);
-	if (end_slot == -1 || step_slot == -1) { compiler_error(c, "too many locals"); return; }
-	c->current_scope->num_locals += 2;
-	chunk_emit(c->current_scope, OP_STORE_LOCAL, step_slot);
-	chunk_emit(c->current_scope, OP_STORE_LOCAL, end_slot);
-	chunk_emit(c->current_scope, OP_STORE_LOCAL, slot);
+	if (slot == -1 || end_slot == -1 || step_slot == -1) {
+		compiler_error(c, "too many locals");
+		scope_end(c->scope);
+		return;
+	}
+	ch->num_locals += 3;
 
-	int loop_start = c->current_scope->code_len;
-	int incoming_break_start = c->break_count;
-	c->break_patches[c->break_count++] = -1;
+	chunk_emit(ch, OP_STORE_LOCAL, step_slot);
+	chunk_emit(ch, OP_STORE_LOCAL, end_slot);
+	chunk_emit(ch, OP_STORE_LOCAL, slot);
 
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, step_slot);
-	chunk_emit(c->current_scope, OP_LOAD_CONST,
-			chunk_add_const(c->current_scope, vm_val_int(0)));
-	chunk_emit(c->current_scope, OP_EQ, 0);
-	int nonzero_step = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
-	chunk_emit(c->current_scope, OP_LOAD_CONST,
-			chunk_add_const(c->current_scope, vm_val_int(1)));
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, step_slot);
-	chunk_emit(c->current_scope, OP_DIV, 0);
-	chunk_emit(c->current_scope, OP_POP, 0);
-	chunk_patch(c->current_scope, nonzero_step, c->current_scope->code_len);
+	if (!step_is_lit) {
+		emit_int_const(c, 1);
+		chunk_emit(ch, OP_LOAD_LOCAL, step_slot);
+		chunk_emit(ch, OP_DIV, 0);
+		chunk_emit(ch, OP_POP, 0);
+	}
 
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, step_slot);
-	chunk_emit(c->current_scope, OP_LOAD_CONST,
-			chunk_add_const(c->current_scope, vm_val_int(0)));
-	chunk_emit(c->current_scope, OP_LT, 0);
-	int positive_step = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
+	int loop_start = ch->code_len;
+	int break_start = c->break_count;
 
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot);
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, end_slot);
-	chunk_emit(c->current_scope, OP_GT, 0);
-	int negative_done = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
-	int enter_body = chunk_emit(c->current_scope, OP_JMP, 0);
+	int exits[2], exit_count = 0;
 
-	chunk_patch(c->current_scope, positive_step, c->current_scope->code_len);
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot);
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, end_slot);
-	chunk_emit(c->current_scope, OP_LT, 0);
-	int positive_done = chunk_emit(c->current_scope, OP_JMP_FALSE, 0);
-	int body_start = c->current_scope->code_len;
-	chunk_patch(c->current_scope, enter_body, body_start);
+	if (step_is_lit) {
+		chunk_emit(ch, OP_LOAD_LOCAL, slot);
+		chunk_emit(ch, OP_LOAD_LOCAL, end_slot);
+		chunk_emit(ch, step_lit < 0 ? OP_GT : OP_LT, 0);
+		exits[exit_count++] = chunk_emit(ch, OP_JMP_FALSE, 0);
+	} else {
+		chunk_emit(ch, OP_LOAD_LOCAL, step_slot);
+		emit_int_const(c, 0);
+		chunk_emit(ch, OP_LT, 0);
+		int to_positive = chunk_emit(ch, OP_JMP_FALSE, 0);
 
+		chunk_emit(ch, OP_LOAD_LOCAL, slot);
+		chunk_emit(ch, OP_LOAD_LOCAL, end_slot);
+		chunk_emit(ch, OP_GT, 0);
+		exits[exit_count++] = chunk_emit(ch, OP_JMP_FALSE, 0);
+		int to_body = chunk_emit(ch, OP_JMP, 0);
+
+		chunk_patch(ch, to_positive, ch->code_len);
+		chunk_emit(ch, OP_LOAD_LOCAL, slot);
+		chunk_emit(ch, OP_LOAD_LOCAL, end_slot);
+		chunk_emit(ch, OP_LT, 0);
+		exits[exit_count++] = chunk_emit(ch, OP_JMP_FALSE, 0);
+
+		chunk_patch(ch, to_body, ch->code_len);
+	}
+
+	c->loop_depth++;
 	compile_body(c, node->body, node->body_len);
+	c->loop_depth--;
 
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, slot);
-	chunk_emit(c->current_scope, OP_LOAD_LOCAL, step_slot);
-	chunk_emit(c->current_scope, OP_ADD, 0);
-	chunk_emit(c->current_scope, OP_STORE_LOCAL, slot);
-	chunk_emit(c->current_scope, OP_JMP, loop_start);
-	int loop_end = c->current_scope->code_len;
-	chunk_patch(c->current_scope, negative_done, loop_end);
-	chunk_patch(c->current_scope, positive_done, loop_end);
+	chunk_emit(ch, OP_LOAD_LOCAL, slot);
+	chunk_emit(ch, OP_LOAD_LOCAL, step_slot);
+	chunk_emit(ch, OP_ADD, 0);
+	chunk_emit(ch, OP_STORE_LOCAL, slot);
+	chunk_emit(ch, OP_JMP, loop_start);
+
+	int loop_end = ch->code_len;
+	for (int i = 0; i < exit_count; i++) chunk_patch(ch, exits[i], loop_end);
 
 	scope_end(c->scope);
 
-	for (int i = incoming_break_start; i < c->break_count; i++)
-		if (c->break_patches[i] >= 0)
-			chunk_patch(c->current_scope, c->break_patches[i], c->current_scope->code_len);
-
-	c->break_count = incoming_break_start;
+	for (int i = break_start; i < c->break_count; i++)
+		chunk_patch(ch, c->break_patches[i], loop_end);
+	c->break_count = break_start;
 }
 
 // ======================
@@ -645,53 +690,63 @@ static void pre_register_functions(compiler_t *c)
 /// @param node: FUNCTION node - args: NAME, ...PARAMS | body
 static void compile_function(compiler_t *c, const okin_node_t *node)
 {
+	const char *name = node->args[0]->val_start;
+	size_t      nlen = node->args[0]->val_len;
+
 	for (int i = 0; i < c->parser->program->len; i++) {
-		const okin_node_t *previous = c->parser->program->nodes[i];
-		if (previous == node) break;
-		if (previous->opcode == FUNCTION &&
-				node->args[0]->val_len == previous->args[0]->val_len &&
-				memcmp(node->args[0]->val_start, previous->args[0]->val_start,
-					node->args[0]->val_len) == 0)
+		const okin_node_t *prev = c->parser->program->nodes[i];
+		if (prev == node) break;
+		if (prev->opcode == FUNCTION &&
+				prev->args[0]->val_len == nlen &&
+				memcmp(prev->args[0]->val_start, name, nlen) == 0) {
+			char msg[256];
+			snprintf(msg, sizeof(msg), "duplicate function '%.*s'", (int)nlen, name);
+			compiler_error(c, msg);
 			return;
+		}
 	}
-	int sub_idx = resolve_func(c, node->args[0]->val_start, node->args[0]->val_len);
+
+	int sub_idx = resolve_func(c, name, nlen);
 	if (sub_idx < 0 || sub_idx >= c->root->sub_len) {
 		compiler_error(c, "invalid function index");
 		return;
 	}
 
-	chunk_t  *fn_chunk     = c->root->sub_chunks[sub_idx];
-	chunk_t  *parent       = c->current_scope;
-	scope_t  *parent_scope = c->scope;
-	label_table_t parent_labels = c->labels;
-	int parent_break_count = c->break_count;
+	chunk_t       *fn_chunk          = c->root->sub_chunks[sub_idx];
+	chunk_t       *parent            = c->current_scope;
+	scope_t       *parent_scope      = c->scope;
+	label_table_t  parent_labels     = c->labels;
+	int            parent_break_cnt  = c->break_count;
+	int            parent_loop_depth = c->loop_depth;
 
 	c->current_scope = fn_chunk;
 	lt_init(&c->labels);
 	c->break_count = 0;
-	c->scope         = scope_init(parent_scope);
+	c->loop_depth  = 0;
+	c->scope       = scope_init(parent_scope);
 	scope_begin(c->scope);
 
+	int ok = 1;
 	for (int i = 1; i < node->argc; i++) {
 		int slot = scope_declare(c->scope, node->args[i]->val_start, node->args[i]->val_len);
 		if (slot == -1) {
 			compiler_error(c, "too many local parameters");
-			scope_end(c->scope);
-			scope_free(c->scope);
-			c->scope         = parent_scope;
-			c->current_scope = parent;
-			c->labels        = parent_labels;
-			c->break_count   = parent_break_count;
-			return;
+			ok = 0;
+			break;
 		}
 		fn_chunk->num_params++;
 		fn_chunk->num_locals++;
 	}
 
-	compile_body(c, node->body, node->body_len);
+	if (ok) {
+		compile_body(c, node->body, node->body_len);
 
-	chunk_emit(c->current_scope, OP_NIL, 0);
-	chunk_emit(c->current_scope, OP_RET, 0);
+		if (c->labels.patch_count > 0)
+			compiler_error(c, "jump to undefined label in function");
+
+		chunk_emit(c->current_scope, OP_NIL, 0);
+		chunk_emit(c->current_scope, OP_RET, 0);
+	}
 
 	scope_end(c->scope);
 	scope_free(c->scope);
@@ -699,7 +754,8 @@ static void compile_function(compiler_t *c, const okin_node_t *node)
 	c->scope         = parent_scope;
 	c->current_scope = parent;
 	c->labels        = parent_labels;
-	c->break_count   = parent_break_count;
+	c->break_count   = parent_break_cnt;
+	c->loop_depth    = parent_loop_depth;
 }
 
 // ======================
