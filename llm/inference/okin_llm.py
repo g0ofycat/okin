@@ -21,7 +21,7 @@ OUTPUT_FILE   = os.path.join(DATA_DIR, "llm_output.txt")
 # -- CONFIG
 # ======================
 
-LM_BASE_URL     = "http://192.168.12.202:1234/v1"
+LM_BASE_URL     = "http://127.0.0.1:1234/v1"
 LM_API_KEY      = "lm-studio"
 LM_MODEL        = "local-model"
 MAX_RETRIES     = 3
