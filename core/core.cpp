@@ -2,12 +2,62 @@
 #include "../src/lexer/lexer.h"
 #include "../src/parser/parser.h"
 #include "../src/interpreter/interpreter.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 #ifdef USE_VM
 #include "../src/vm/vm.h"
 #include "../src/compiler/compiler.h"
 #include "../src/compiler/chunk.h"
 #endif
+
+static char* read_file_to_string(const char *filepath) {
+	FILE *f = fopen(filepath, "rb");
+	if (!f) return nullptr;
+
+	fseek(f, 0, SEEK_END);
+	long len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	char *buf = (char*)malloc(len + 1);
+	if (!buf) {
+		fclose(f);
+		return nullptr;
+	}
+
+	long read_len = fread(buf, 1, len, f);
+	buf[read_len] = '\0';
+	fclose(f);
+	return buf;
+}
+
+static bool resolve_source_input(const char *src, char **out_file_content) {
+	if (!src) return false;
+
+	size_t src_len = strlen(src);
+	bool is_file = false;
+
+	if (src_len > 5 && strcmp(src + src_len - 5, ".okin") == 0) {
+		is_file = true;
+	} else {
+		FILE *f = fopen(src, "rb");
+		if (f) {
+			is_file = true;
+			fclose(f);
+		}
+	}
+
+	if (is_file) {
+		*out_file_content = read_file_to_string(src);
+		if (!*out_file_content) {
+			std::cerr << "Error: Could not open or read file '" << src << "'\n";
+			return false;
+		}
+	}
+	return true;
+}
 
 #ifdef USE_BENCHMARK
 
@@ -16,7 +66,6 @@
 static void BM_okin(benchmark::State &state, const char *code) {
 	for (auto _ : state) {
 		lexer_t* lex = lexer_init(code);
-
 		lexer_run(lex);
 		parser_t* parse = parser_init(lex);
 		parser_run(parse);
@@ -64,10 +113,16 @@ int main(int argc, char** argv) {
 
 	if (!src) return 1;
 
+	char *file_content = nullptr;
+	if (!resolve_source_input(src, &file_content)) {
+		return 1;
+	}
+	const char *code_input = file_content ? file_content : src;
+
 	okin_config_t cfg;
 	bool has_config = config_arg ? okin_config_load(&cfg, config_arg) : okin_config_load_cache(&cfg);
-	char *expanded = has_config ? okin_config_expand(&cfg, src) : nullptr;
-	const char *final_src = expanded ? expanded : src;
+	char *expanded = has_config ? okin_config_expand(&cfg, code_input) : nullptr;
+	const char *final_src = expanded ? expanded : code_input;
 
 #ifdef USE_VM
 	if (use_vm)
@@ -78,6 +133,7 @@ int main(int argc, char** argv) {
 
 	benchmark::RunSpecifiedBenchmarks();
 	free(expanded);
+	free(file_content);
 	return 0;
 }
 
@@ -85,7 +141,7 @@ int main(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 	if (argv[1] && strcmp(argv[1], "-help") == 0) {
-		printf("Usage: okin <source_code> [flags...]\n\nFlag list:\n\n-d : Enable print debugging based on the source code.\n-vm: Enable the Compiler and OVM (Okin Virtual Machine) pipeline to convert to true bytecode instead of interpreting, allowing for much faster code execution depending on the task.\n--config <file|toml>: Load opcode mappings for compact <> syntax; cached in .okin_config_cache for future runs.\n");
+		printf("Usage: okin <source_code_or_file.okin> [flags...]\n\nFlag list:\n\n-d : Enable print debugging based on the source code.\n-vm: Enable the Compiler and OVM (Okin Virtual Machine) pipeline to convert to true bytecode instead of interpreting, allowing for much faster code execution depending on the task.\n--config <file|toml>: Load opcode mappings for compact <> syntax; cached in .okin_config_cache for future runs.\n");
 		return 0;
 	}
 	if (argc < 2) {
@@ -99,18 +155,24 @@ int main(int argc, char** argv) {
 	const char *src = nullptr;
 	const char *config_arg = nullptr;
 	for (int i = 1; i < argc; i++) {
-		if (strcmp(argv[i], "-vm") == 0)          use_vm = true;
-		else if (strcmp(argv[i], "-d") == 0)      debug  = true;
+		if (strcmp(argv[i], "-vm") == 0)      use_vm = true;
+		else if (strcmp(argv[i], "-d") == 0)     debug  = true;
 		else if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) config_arg = argv[++i];
 		else src = argv[i];
 	}
 
 	if (!src) return 1;
 
+	char *file_content = nullptr;
+	if (!resolve_source_input(src, &file_content)) {
+		return 1;
+	}
+	const char *code_input = file_content ? file_content : src;
+
 	okin_config_t cfg;
 	bool has_config = config_arg ? okin_config_load(&cfg, config_arg) : okin_config_load_cache(&cfg);
-	char *expanded = has_config ? okin_config_expand(&cfg, src) : nullptr;
-	const char *final_src = expanded ? expanded : src;
+	char *expanded = has_config ? okin_config_expand(&cfg, code_input) : nullptr;
+	const char *final_src = expanded ? expanded : code_input;
 
 	lexer_t* lex = lexer_init(final_src);
 	lexer_run(lex);
@@ -122,6 +184,7 @@ int main(int argc, char** argv) {
 		parser_free(parse);
 		lexer_free(lex);
 		free(expanded);
+		free(file_content);
 		return 1;
 	}
 
@@ -135,6 +198,7 @@ int main(int argc, char** argv) {
 			parser_free(parse);
 			lexer_free(lex);
 			free(expanded);
+			free(file_content);
 			return 1;
 		}
 		vm_t* vm = vm_init(c->root);
@@ -152,6 +216,7 @@ int main(int argc, char** argv) {
 			parser_free(parse);
 			lexer_free(lex);
 			free(expanded);
+			free(file_content);
 			return 1;
 		}
 	}
@@ -159,6 +224,7 @@ int main(int argc, char** argv) {
 	parser_free(parse);
 	lexer_free(lex);
 	free(expanded);
+	free(file_content);
 	return 0;
 }
 

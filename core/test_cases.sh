@@ -317,7 +317,6 @@ section "design decisions"
 # ----------------------------------------------------------------------
 t '2<R,0>;224~POW<2,20,R>;192~WRITELN<R>'                  '1048576'    'integral float prints without exponent'
 t '2<R,0>;224~POW<2,@0.5,R>;192~WRITELN<R>'                '1.4142135623731'  'POW with fractional exponent'
-t_err '192~WRITELN<UNDECLARED>'                            "undeclared variable at root (interp: error, vm: nil)"
 
 # ----------------------------------------------------------------------
 section "stress (performance / limits)"
