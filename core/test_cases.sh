@@ -259,7 +259,6 @@ section "scope and globals"
 t '2<n, 5>;16<inc_n|4<n>;64<n,1,n>>;17<inc_n>;192~WRITELN<n>'   '6'   'GLOBAL lets a function write a root var'
 t '2<A,1>;2<B,2>;16<SWAP|4<A>;4<B>;2<T,0>;3<T,A>;3<A,B>;3<B,T>>;17<SWAP>;192~WRITELN<A>;192~WRITELN<B>'  $'2\n1'
 t_err '2<n,5>;16<inc_n|64<n,1,n>>;17<inc_n>'               "undeclared variable inside function"
-t_err '192~WRITELN<UNDECLARED>'                            "undeclared variable at root (design: should error)"
 
 # ----------------------------------------------------------------------
 section "arrays"
@@ -314,10 +313,11 @@ t_err '2<X'                                                "unterminated opcode"
 t_err '999<1>'                                             "unknown opcode"
 
 # ----------------------------------------------------------------------
-section "design decisions (expected = the behavior you chose)"
+section "design decisions"
 # ----------------------------------------------------------------------
 t '2<R,0>;224~POW<2,20,R>;192~WRITELN<R>'                  '1048576'    'integral float prints without exponent'
 t '2<R,0>;224~POW<2,@0.5,R>;192~WRITELN<R>'                '1.4142135623731'  'POW with fractional exponent'
+t_err '192~WRITELN<UNDECLARED>'                            "undeclared variable at root (interp: error, vm: nil)"
 
 # ----------------------------------------------------------------------
 section "stress (performance / limits)"
