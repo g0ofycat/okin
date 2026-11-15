@@ -58,8 +58,8 @@ static const okin_opcode_info_t opcode_table[] = {
 	{ "144",         1, 0 },
 
 	{ "192~READ",    1, 0 },
-	{ "192~WRITE",   1, 0 },
-	{ "192~WRITELN", 1, 0 },
+	{ "192~WRITE",  -1, 0 },
+	{ "192~WRITELN", -1, 0 },
 
 	{ "208~LEN",     1, 0 },
 	{ "208~CONCAT",  2, 0 },
